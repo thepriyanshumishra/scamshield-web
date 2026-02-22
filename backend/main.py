@@ -17,7 +17,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from blockchain_service import add_scam_to_ledger, get_all_scams
-from groq_service import analyse_text
+from groq_service import analyse_text, generate_arcade_level
+import random
 
 # ── Load environment variables from .env ───────────────────────────────────
 load_dotenv()
@@ -175,10 +176,36 @@ async def store_scam(body: StoreRequest):
 
 @app.get("/scams")
 async def get_scams():
-    """Return all stored scam records from the blockchain."""
-    scams = get_all_scams()
-    return {"total": len(scams), "scams": scams}
+    """Fetch all scam records directly from the Polygon Amoy blockchain."""
+    try:
+        scams = get_all_scams()
+        # Sort newest first based on on-chain timestamp
+        scams.sort(key=lambda x: x["timestamp"], reverse=True)
+        return {"total": len(scams), "scams": scams}
+    except Exception as e:
+        print(f"Error fetching scams from blockahin: {e}")
+        return {"total": 0, "scams": []}
 
+# ── Dynamic AI Arcade Endpoint ──────────────────────────────────────────────
+@app.get("/arcade/generate")
+async def get_arcade_level():
+    """
+    Randomly generates a scam or safe text message using the Groq LLM.
+    We skew it slightly towards scams (60/40) to keep the game engaging.
+    """
+    # 60% chance to force a scam message, 40% chance for a safe message
+    force_scam = random.random() < 0.60
+    
+    try:
+        level_data = generate_arcade_level(force_scam)
+        return level_data
+    except Exception as e:
+        print(f"Error generating arcade level: {e}")
+        return {
+            "text": "Failed to connect to the AI engine.",
+            "isScam": False,
+            "explanation": "Backend error. Please try again."
+        }
 
 # ── Health check ────────────────────────────────────────────────────────────
 @app.get("/")

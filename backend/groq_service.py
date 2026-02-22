@@ -208,3 +208,60 @@ def _fallback_result() -> dict:
         "red_flags":   ["Could not analyse — AI service unavailable"],
         "advice":      "Please try again. If you suspect a scam, do not share personal information.",
     }
+
+# ── Arcade Minigame Generation ───────────────────────────────────────────────
+ARCADE_PROMPT = """You are a creative cybersecurity game developer for ScamShield.
+Your job is to generate exactly ONE random, highly realistic text message (SMS, WhatsApp, or short Email).
+
+The user parameter 'Force-Scam:' will dictate whether you generate a malicious scam or a perfectly safe, normal message.
+
+RULES:
+1. Make it realistic (e.g. typos in scams, standard corporate speak in safe messages).
+2. For SCAMS, use common modern vectors: Pig butchering, fake crypto refunds, job tasks, KYC suspension, fake delivery.
+3. For SAFE messages, use standard notifications: OTPs from known services, friend texting, calendar reminders, legitimate delivery updates.
+4. Keep the text under 300 characters.
+5. Provide a short, educational explanation of WHY it is or is not a scam.
+
+You must output ONLY valid JSON without markdown wrapping. Format:
+{
+  "text": "The generated string message",
+  "isScam": true/false,
+  "explanation": "Short 1-2 sentence explanation of the red flags or safety indicators."
+}"""
+
+def generate_arcade_level(force_scam: bool) -> dict:
+    """
+    Generates a fresh, realistic text message for the /arcade minigame.
+    Returns: {"text": str, "isScam": bool, "explanation": str}
+    """
+    client = _get_client()
+    
+    constraint = "Force-Scam: TRUE (Generate a highly deceptive scam message)" if force_scam else "Force-Scam: FALSE (Generate a completely safe, normal everyday message)"
+    
+    try:
+        response = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=[
+                {"role": "system", "content": ARCADE_PROMPT},
+                {"role": "user", "content": constraint}
+            ],
+            temperature=0.9, # High temp for varied creativity
+            response_format={"type": "json_object"}
+        )
+        
+        raw = response.choices[0].message.content
+        result = json.loads(raw)
+        
+        return {
+            "text": str(result.get("text", "Error generating text.")),
+            "isScam": bool(result.get("isScam", force_scam)),
+            "explanation": str(result.get("explanation", "No explanation available."))
+        }
+        
+    except Exception as e:
+        print(f"⚠️  Groq Arcade Error: {e}")
+        return {
+            "text": "System error. Could not connect to AI generator.",
+            "isScam": False,
+            "explanation": "The backend AI service is currently unavailable."
+        }

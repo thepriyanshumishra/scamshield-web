@@ -3,69 +3,67 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 
-// ── Game Data ─────────────────────────────────────────────────────────────
-const LEVEL_DATA = [
-    {
-        text: "SBI ALERT: Your account has been temporarily suspended due to KYC expiry. Click here to verify your identity immediately: http://sbi-update-kyc.in/auth",
-        isScam: true,
-        explanation: "Urgency tactics ('immediately') combined with a non-official URL (sbi-update-kyc.in instead of sbi.co.in) is a classic phishing red flag.",
-    },
-    {
-        text: "Your Amazon package containing 'Sony WH-1000XM4' is out for delivery today. OTP is 4920. Share with delivery agent only.",
-        isScam: false,
-        explanation: "This is a standard transactional SMS from a trusted service. No suspicious links, no money requested.",
-    },
-    {
-        text: "Congratulations! Your mobile number has won £1,000,000 in the International Mobile Draw. Send your bank details to claim@mobile-draw-winner.co.uk to claim your prize.",
-        isScam: true,
-        explanation: "Classic advance-fee lottery scam. You cannot win a lottery you didn't enter, and legitimate lotteries don't ask for banking details upfront via email.",
-    },
-    {
-        text: "Hi Mom, I dropped my phone in the toilet and I'm using a friend's phone. Can you urgently WhatsApp me on this new number +447911123456? I need £50 for a cab home.",
-        isScam: true,
-        explanation: "The 'Hi Mum/Dad' scam. Scammers impersonate distressed family members to extract direct, urgent bank transfers.",
-    },
-    {
-        text: "Here is your 6-digit GitHub verification code: 829104. Valid for 10 minutes. Do not share this with anyone.",
-        isScam: false,
-        explanation: "Standard Two-Factor Authentication (2FA) OTP. No external links, explicit warning not to share.",
-    },
-];
+// ── Game Types ────────────────────────────────────────────────────────────
+type LevelData = {
+    text: string;
+    isScam: boolean;
+    explanation: string;
+};
 
 // ── Components ────────────────────────────────────────────────────────────
 export default function ArcadePage() {
-    const [currentLevel, setCurrentLevel] = useState(0);
+    const [currentLevelNum, setCurrentLevelNum] = useState(1);
     const [score, setScore] = useState(0);
-    const [gameState, setGameState] = useState<"PLAYING" | "REVEALED" | "GAMEOVER">("PLAYING");
+    const [gameState, setGameState] = useState<"LOADING" | "PLAYING" | "REVEALED" | "GAMEOVER">("LOADING");
     const [userGuessedScam, setUserGuessedScam] = useState<boolean | null>(null);
+    const [level, setLevel] = useState<LevelData | null>(null);
 
-    const level = LEVEL_DATA[currentLevel];
+    // Initial fetch
+    useState(() => {
+        fetchNextLevel();
+    });
+
+    async function fetchNextLevel() {
+        setGameState("LOADING");
+        try {
+            const res = await fetch("http://127.0.0.1:8000/arcade/generate");
+            const data = await res.json();
+            setLevel(data);
+            setGameState("PLAYING");
+        } catch (e) {
+            console.error("Failed to fetch next level", e);
+            setLevel({
+                text: "Connection to AI engine failed. Please try again.",
+                isScam: false,
+                explanation: "Please ensure the backend server is running."
+            });
+            setGameState("PLAYING");
+        }
+    }
 
     function handleGuess(guessIsScam: boolean) {
-        if (gameState !== "PLAYING") return;
+        if (gameState !== "PLAYING" || !level) return;
 
         setUserGuessedScam(guessIsScam);
         if (guessIsScam === level.isScam) {
             setScore((s) => s + 1);
-        }
-        setGameState("REVEALED");
-    }
-
-    function handleNext() {
-        if (currentLevel < LEVEL_DATA.length - 1) {
-            setCurrentLevel((c) => c + 1);
-            setGameState("PLAYING");
-            setUserGuessedScam(null);
+            setGameState("REVEALED");
         } else {
             setGameState("GAMEOVER");
         }
     }
 
-    function handleRestart() {
-        setCurrentLevel(0);
-        setScore(0);
-        setGameState("PLAYING");
+    function handleNext() {
+        setCurrentLevelNum((c) => c + 1);
         setUserGuessedScam(null);
+        fetchNextLevel();
+    }
+
+    function handleRestart() {
+        setCurrentLevelNum(1);
+        setScore(0);
+        setUserGuessedScam(null);
+        fetchNextLevel();
     }
 
     return (
@@ -86,48 +84,46 @@ export default function ArcadePage() {
                         Can you outsmart the AI?
                     </h1>
 
-                    {/* Visual Progress Pips */}
+                    {/* Visual Progress Pips (Endless) */}
                     {gameState !== "GAMEOVER" && (
-                        <div className="flex justify-center gap-2 mt-6">
-                            {LEVEL_DATA.map((_, i) => (
-                                <div
-                                    key={i}
-                                    className={`w-6 h-6 border-2 border-black ${i < currentLevel ? "bg-neo-green" :
-                                            i === currentLevel ? "bg-neo-yellow animate-pulse" :
-                                                "bg-white"
-                                        }`}
-                                />
-                            ))}
+                        <div className="flex justify-center gap-2 mt-6 flex-wrap">
+                            <div className="bg-neo-green font-black text-black px-3 py-1 border-2 border-black flex items-center justify-center">
+                                SCORE: {score}
+                            </div>
+                            <div className="bg-neo-yellow px-3 py-1 border-2 border-black font-black text-black flex items-center justify-center animate-pulse">
+                                LEVEL: {currentLevelNum}
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {gameState === "GAMEOVER" ? (
                     <div className="neo-card bg-white text-black p-8 text-center animate-in zoom-in-95 duration-500">
-                        <h2 className="text-4xl font-black mb-2">Game Over!</h2>
+                        <h2 className="text-4xl font-black mb-2 animate-bounce">💀 Game Over!</h2>
                         <p className="text-xl font-bold mb-6">
-                            You scored <span className="text-neo-red">{score}</span> out of {LEVEL_DATA.length}.
+                            You survived <span className="text-neo-red">{currentLevelNum - 1}</span> rounds.
                         </p>
 
-                        {score === LEVEL_DATA.length ? (
-                            <p className="bg-neo-green p-4 border-2 border-black font-bold mb-8 shadow-neo-sm">
-                                🎉 Perfect Score! You have the instincts of an AI fraud detector.
+                        <div className="bg-neo-red text-white p-6 border-4 border-black font-bold mb-8 shadow-neo-sm relative overflow-hidden">
+                            <h3 className="text-2xl font-black mb-2">You got scammed!</h3>
+                            <p className="text-sm font-medium">
+                                Human intuition fails eventually. The Groq AI engine caught what you missed.
                             </p>
-                        ) : score >= 3 ? (
-                            <p className="bg-neo-yellow p-4 border-2 border-black font-bold mb-8 shadow-neo-sm">
-                                👍 Not bad! You spotted most of them, but scammers are tricky.
-                            </p>
-                        ) : (
-                            <p className="bg-neo-red text-white p-4 border-2 border-black font-bold mb-8 shadow-neo-sm">
-                                🚨 Warning! You might be susceptible to modern scams. Let ScamShield help you!
-                            </p>
-                        )}
+                        </div>
 
-                        <button onClick={handleRestart} className="btn-neo-blue w-full py-4 text-lg">
-                            🔄 Play Again
+                        <button onClick={handleRestart} className="btn-neo-blue w-full py-4 text-xl tracking-widest font-black uppercase">
+                            🔄 Retry Survival Mode
                         </button>
                     </div>
-                ) : (
+                ) : gameState === "LOADING" ? (
+                    <div className="neo-card bg-white text-black p-12 text-center flex flex-col items-center justify-center border-4 border-black min-h-[400px]">
+                        <div className="w-16 h-16 border-8 border-neo-blue border-t-neo-yellow rounded-full animate-spin mb-6"></div>
+                        <h2 className="text-2xl font-black uppercase tracking-widest animate-pulse">
+                            AI is Generating Scenario...
+                        </h2>
+                        <p className="font-bold text-gray-500 mt-2">Connecting to Groq Engine</p>
+                    </div>
+                ) : level && (
                     <div className="neo-card bg-white text-black p-6 md:p-8 animate-in fade-in zoom-in-95 duration-300 shadow-[12px_12px_0px_rgba(0,0,0,1)]">
 
                         {/* The Message */}
