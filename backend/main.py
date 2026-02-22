@@ -2,23 +2,28 @@
 main.py — ScamShield FastAPI backend.
 
 Endpoints:
-  POST /analyze-text   → AI scam analysis for text input
-  POST /analyze-image  → OCR + AI scam analysis for image upload
+  POST /analyze-text   → Groq LLM scam analysis for text input
+  POST /analyze-image  → Tesseract OCR + Groq LLM analysis for image upload
   POST /store-scam     → Store scam hash + category in SQLite
   GET  /scams          → Fetch all stored scams
 """
 
-import hashlib
 import io
+import os
 
-from fastapi import FastAPI, File, Form, UploadFile
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from database import fetch_all_scams, init_db, insert_scam
+from groq_service import analyse_text
+
+# ── Load environment variables from .env ───────────────────────────────────
+load_dotenv()
 
 # ── App setup ──────────────────────────────────────────────────────────────
-app = FastAPI(title="ScamShield API", version="0.1.0")
+app = FastAPI(title="ScamShield API", version="0.2.0")
 
 # Allow frontend (localhost:3000) to call this API during development
 app.add_middleware(
@@ -34,6 +39,12 @@ app.add_middleware(
 async def startup():
     """Initialize the SQLite database on server start."""
     init_db()
+
+    # Check API key is present
+    if not os.environ.get("GROQ_API_KEY"):
+        print("⚠️  WARNING: GROQ_API_KEY not set. Copy backend/.env.example → .env and add your key.")
+    else:
+        print("✅ Groq API key loaded.")
 
 
 # ── Request / Response models ───────────────────────────────────────────────
@@ -53,62 +64,68 @@ class StoreRequest(BaseModel):
     category: str
 
 
-# ── Helper: build mock analysis result ─────────────────────────────────────
-def _mock_analysis(text: str) -> dict:
+# ── OCR helper ───────────────────────────────────────────────────────────────
+def _extract_text_from_image(image_bytes: bytes) -> str:
     """
-    Placeholder analysis — returns a hardcoded result.
-    Replace with Groq LLM call in the next phase.
+    Run Tesseract OCR on image bytes.
+    Supports English + Hindi (lang='eng+hin').
+
+    Returns extracted text, or a descriptive error string if Tesseract
+    is not installed (so the AI still receives something useful).
     """
-    return {
-        "probability": 0.87,
-        "category": "bank scam",
-        "red_flags": [
-            "Urgency language detected",
-            "Request for OTP / PIN",
-            "Unknown sender number",
-        ],
-        "advice": (
-            "Do NOT share your OTP or bank PIN with anyone. "
-            "Report this number to your bank immediately."
-        ),
-    }
+    try:
+        import pytesseract
+        from PIL import Image
+
+        image = Image.open(io.BytesIO(image_bytes))
+
+        # Convert to RGB if needed (e.g. PNG with alpha channel)
+        if image.mode not in ("RGB", "L"):
+            image = image.convert("RGB")
+
+        # Try English + Hindi first; fall back to English-only if Hindi lang pack missing
+        try:
+            text = pytesseract.image_to_string(image, lang="eng+hin")
+        except pytesseract.TesseractError:
+            text = pytesseract.image_to_string(image, lang="eng")
+
+        text = text.strip()
+        if not text:
+            return "[OCR returned empty text — image may be blurry or contain no text]"
+        return text
+
+    except ImportError:
+        return "[pytesseract not installed — run: pip install pytesseract Pillow]"
+    except Exception as e:
+        return f"[OCR error: {e}]"
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────────
 @app.post("/analyze-text", response_model=AnalysisResult)
-async def analyze_text(body: TextRequest):
+async def analyze_text_endpoint(body: TextRequest):
     """
-    Analyze a text message for scam indicators.
+    Analyze a text message for scam indicators using Groq LLM.
 
     Input : { "message": "..." }
     Output: { probability, category, red_flags[], advice }
     """
-    result = _mock_analysis(body.message)
+    result = analyse_text(body.message)
     return result
 
 
 @app.post("/analyze-image", response_model=AnalysisResult)
 async def analyze_image(file: UploadFile = File(...)):
     """
-    Accept an image upload, run OCR to extract text, then analyze.
+    Accept an image upload, run OCR (English + Hindi), then analyze with Groq.
 
-    Phase 1: OCR via pytesseract (English + Hindi).
-    Phase 2 (next step): Replace mock analysis with Groq LLM call.
+    Flow: image → pytesseract OCR → extracted text → Groq LLM → result JSON
     """
-    try:
-        import pytesseract
-        from PIL import Image
+    image_bytes = await file.read()
+    extracted_text = _extract_text_from_image(image_bytes)
 
-        image_bytes = await file.read()
-        image = Image.open(io.BytesIO(image_bytes))
+    print(f"📝 OCR extracted ({len(extracted_text)} chars): {extracted_text[:120]}…")
 
-        # OCR — English + Hindi
-        extracted_text = pytesseract.image_to_string(image, lang="eng+hin")
-    except Exception as e:
-        # If tesseract isn't installed yet, fall back to placeholder text
-        extracted_text = f"[OCR unavailable: {e}] Sample scam text for demo."
-
-    result = _mock_analysis(extracted_text)
+    result = analyse_text(extracted_text)
     return result
 
 
@@ -134,4 +151,4 @@ async def get_scams():
 # ── Health check ────────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"status": "ok", "service": "ScamShield API"}
+    return {"status": "ok", "service": "ScamShield API", "version": "0.2.0"}

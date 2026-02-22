@@ -37,4 +37,36 @@ All 3 talk to each other. User sees the website → website calls backend → ba
 
 ---
 
+## Entry 2 — AI Scam Detection with Groq + OCR
+**Date:** 2026-02-22
+
+### What we built
+Connected a real AI brain to our backend — the Groq LLM API — and wired up Tesseract OCR so the app can read text from screenshots too.
+
+### Why we built it
+The previous version returned fake data every time. Now the app actually thinks about the message and gives a real answer. OCR lets users upload a screenshot of a scam WhatsApp message or SMS and get it analysed automatically.
+
+### How it works (simple)
+1. User pastes a message or uploads a screenshot.
+2. If it's a screenshot, Tesseract reads the text from the image (supports English + Hindi).
+3. That text gets sent to Groq's AI (LLaMA 3 model) with a strict instruction: "analyse this and return JSON only."
+4. The AI returns: how likely it's a scam (%), what type of scam, what red flags it spotted, and safety advice.
+5. The frontend shows all of this in a result card.
+
+### Tech used
+| Part | Tech |
+|---|---|
+| AI Model | Groq API — `llama3-8b-8192` (free, fast) |
+| Prompt style | Structured JSON-only output prompt |
+| OCR | Tesseract — English + Hindi (`eng+hin`) |
+| Env management | `python-dotenv` — loads API key from `.env` |
+| Error safety | JSON parse fallback if AI returns unexpected format |
+
+### Problems faced
+- Groq's model sometimes wraps JSON in markdown code fences (` ```json `) — fixed with a regex to extract the raw JSON object.
+- Tesseract on some systems doesn't have the Hindi language pack (`hin`) — added automatic fallback to English-only mode.
+- `.env` file must never be committed — ensured by `.gitignore` and added `.env.example` as a safe template.
+
+---
+
 _More entries will be added as we build each feature._
