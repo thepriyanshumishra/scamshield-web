@@ -14,11 +14,32 @@ import json
 import os
 import re
 
-from groq import Groq
+from dotenv import load_dotenv
 
-# ── Client setup ─────────────────────────────────────────────────────────────
-# GROQ_API_KEY is loaded from the .env file via python-dotenv (see main.py).
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+# Load .env BEFORE creating the Groq client — the client reads the env var
+# at instantiation time, so this must happen at module level.
+load_dotenv()
+
+from groq import Groq  # noqa: E402 — import after load_dotenv intentionally
+
+# ── Client (lazy singleton) ───────────────────────────────────────────────────
+# We create the client inside get_client() so tests can patch os.environ easily.
+_client: Groq | None = None
+
+
+def _get_client() -> Groq:
+    """Return the shared Groq client, creating it on first use."""
+    global _client
+    if _client is None:
+        api_key = os.environ.get("GROQ_API_KEY", "")
+        if not api_key:
+            raise RuntimeError(
+                "GROQ_API_KEY is not set. "
+                "Copy backend/.env.example → backend/.env and add your key."
+            )
+        _client = Groq(api_key=api_key)
+    return _client
+
 
 # ── Valid scam categories (as defined in PROJECT_SPEC.md) ────────────────────
 VALID_CATEGORIES = {
@@ -61,9 +82,12 @@ def analyse_text(message: str) -> dict:
     Returns a dict with keys: probability, category, red_flags, advice.
     Falls back to a safe default if parsing fails.
     """
+    raw = ""
     try:
+        client = _get_client()
+
         response = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": f"Analyse this message:\n\n{message}"},
@@ -106,6 +130,11 @@ def analyse_text(message: str) -> dict:
     except json.JSONDecodeError as e:
         # Model returned non-JSON — log and return a safe fallback
         print(f"⚠️  Groq JSON parse error: {e}\nRaw response: {raw!r}")
+        return _fallback_result()
+
+    except RuntimeError as e:
+        # Missing API key
+        print(f"⚠️  Configuration error: {e}")
         return _fallback_result()
 
     except Exception as e:
