@@ -72,19 +72,22 @@ export default function TrendsPage() {
         .sort((a, b) => b.count - a.count); // highest first
 
     return (
-        <main className="min-h-screen bg-white">
+        <main className="min-h-screen bg-white" style={{
+            backgroundImage: "radial-gradient(#e5e7eb 1.5px, transparent 1.5px)",
+            backgroundSize: "30px 30px"
+        }}>
             <Navbar />
 
             <section className="max-w-4xl mx-auto px-6 pt-16 pb-16">
                 {/* Header */}
-                <div className="inline-block bg-neo-blue border-2 border-black shadow-neo px-3 py-1 text-sm font-bold text-white mb-4">
-                    Live Dashboard
+                <div className="inline-block bg-neo-blue border-4 border-black shadow-[4px_4px_0px_0px_#000] px-4 py-2 text-sm font-black text-white mb-6 animate-pulse">
+                    📡 LIVE NETWORK FEED
                 </div>
-                <h1 className="text-5xl font-black tracking-tighter mb-2">
-                    📊 Polygon Trends
+                <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-4 text-black drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                    Polygon Trends
                 </h1>
-                <p className="text-gray-600 font-medium mb-8">
-                    Visualise scam patterns stored immutably on the Polygon Amoy testnet.
+                <p className="text-xl text-gray-700 font-bold mb-12 max-w-2xl leading-tight">
+                    Real-time visual analysis of scam patterns archived on the <span className="bg-neo-yellow px-1 underline decoration-black underline-offset-4">Polygon Amoy Testnet</span>.
                 </p>
 
                 {error && (
@@ -98,10 +101,10 @@ export default function TrendsPage() {
                 ) : (
                     <>
                         {/* ── Stat cards ── */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
-                            <StatCard label="Total Stored" value={totalProcessed.toString()} accent="bg-neo-yellow" />
-                            <StatCard label="Scams Caught" value={totalScamsFlagged.toString()} accent="bg-neo-red text-white" />
-                            <StatCard label="Safe Messages" value={safeMessages.toString()} accent="bg-neo-green text-white" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                            <StatCard label="Ledger Size" value={totalProcessed.toString()} accent="bg-white" />
+                            <StatCard label="Scams Blocked" value={totalScamsFlagged.toString()} accent="bg-neo-red" />
+                            <StatCard label="Safe Traffic" value={safeMessages.toString()} accent="bg-neo-green" />
                         </div>
 
                         {totalProcessed === 0 ? (
@@ -112,8 +115,8 @@ export default function TrendsPage() {
                         ) : (
                             <>
                                 {/* ── Category breakdown ── */}
-                                <div className="neo-card p-6 shadow-neo transition-all hover:-translate-y-1">
-                                    <h2 className="text-xl font-black mb-5">Scam Categories</h2>
+                                <div className="neo-card p-8 bg-white border-4 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-none">
+                                    <h2 className="text-2xl font-black mb-8 uppercase tracking-widest border-b-4 border-black inline-block pb-1">Scam Categories</h2>
 
                                     {categoriesArray.length === 0 ? (
                                         <p className="font-mono text-gray-400">No scams detected yet. Only safe messages.</p>
@@ -143,33 +146,33 @@ export default function TrendsPage() {
 
                                 {/* ── Pie donut — CSS only ── */}
                                 {categoriesArray.length > 0 && (
-                                    <div className="mt-8 neo-card p-6 shadow-neo transition-all hover:-translate-y-1 flex flex-col md:flex-row items-center gap-8">
-                                        <div className="relative w-44 h-44 shrink-0 hover:scale-105 transition-transform duration-300">
+                                    <div className="mt-8 neo-card p-8 bg-white border-4 border-black shadow-[12px_12px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row items-center gap-12">
+                                        <div className="relative w-56 h-56 shrink-0 hover:scale-105 transition-transform duration-300">
                                             {/* Build a conic-gradient "pie" */}
                                             <div
-                                                className="w-full h-full rounded-full border-4 border-black shadow-neo"
+                                                className="w-full h-full rounded-full border-8 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)]"
                                                 style={{
                                                     background: buildConicGradient(categoriesArray),
                                                 }}
                                             />
                                             {/* centre hole */}
                                             <div className="absolute inset-[22%] bg-white rounded-full border-2 border-black flex items-center justify-center">
-                                                <span className="text-xs font-black text-center leading-tight">
-                                                    {totalScamsFlagged}<br />scans
+                                                <span className="text-xs font-black text-center leading-tight uppercase">
+                                                    {totalScamsFlagged}<br />threats
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* Legend */}
-                                        <div className="space-y-2">
+                                        <div className="space-y-3">
                                             {categoriesArray.map((cat) => (
                                                 <div key={cat.label} className="flex items-center gap-3">
                                                     <span
-                                                        className="w-4 h-4 border-2 border-black shrink-0"
+                                                        className="w-5 h-5 border-2 border-black shrink-0 shadow-[2px_2px_0px_rgba(0,0,0,1)]"
                                                         style={{ backgroundColor: cat.color }}
                                                     />
-                                                    <span className="font-bold text-sm capitalize">
-                                                        {cat.label} <span className="text-gray-500 font-normal truncate">– {cat.pct}%</span>
+                                                    <span className="font-black text-sm uppercase tracking-tight">
+                                                        {cat.label} <span className="text-gray-500 font-bold ml-2">– {cat.pct}%</span>
                                                     </span>
                                                 </div>
                                             ))}
@@ -180,8 +183,6 @@ export default function TrendsPage() {
                         )}
                     </>
                 )}
-
-
             </section>
         </main>
     );
@@ -198,9 +199,9 @@ function StatCard({
     accent: string;
 }) {
     return (
-        <div className={`neo-card p-5 transition-transform hover:-translate-y-1 cursor-default ${accent}`}>
-            <p className="text-xs font-bold uppercase tracking-wider opacity-90">{label}</p>
-            <p className="text-4xl font-black mt-1 drop-shadow-sm">{value}</p>
+        <div className={`border-4 border-black p-6 transition-all hover:-translate-y-1 shadow-[8px_8px_0px_rgba(0,0,0,1)] ${accent}`}>
+            <p className="text-sm font-black uppercase tracking-widest text-black/70 mb-1">{label}</p>
+            <p className="text-6xl font-black text-black">{value}</p>
         </div>
     );
 }
