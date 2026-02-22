@@ -88,6 +88,7 @@ If a message is clearly a standard automated OTP or login verification sent *by*
 - "Do not share with anyone" is a standard safety warning, NOT a scam red flag.
 - "Valid for 10 minutes" is standard expiry time, NOT a scam "urgency" tactic.
 - Do NOT add any red flags for these standard phrases.
+- For advice, say something helpful like: "Only use this OTP if you are actively logging in. If you didn't request this, ignore it."
 """
 
 # ── Category risk weights (used for calibration) ────────────────────────────
