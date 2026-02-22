@@ -69,4 +69,34 @@ The previous version returned fake data every time. Now the app actually thinks 
 
 ---
 
+## Entry 3 — OCR Image Analysis (Tesseract)
+**Date:** 2026-02-22
+
+### What we built
+Made the "Upload Screenshot" feature actually work. Previously it was fake — now it reads real text from any image and sends it to the AI for scam detection.
+
+### Why we built it
+Most real-world scam messages come as screenshots — WhatsApp, SMS photos, or forwarded images. Without OCR, users would have to manually type out the text, which defeats the purpose.
+
+### How it works (simple)
+1. User uploads a screenshot of a suspicious message.
+2. Tesseract (an OCR engine by Google) scans the image and extracts all readable text.
+3. That text is sent to the Groq AI exactly like a normal text input.
+4. The result card shows the AI analysis + a "show what we read" toggle so users can verify the OCR was correct.
+
+### Tech used
+| Part | Tech |
+|---|---|
+| OCR Engine | Tesseract 5.5.2 (installed via `brew`) |
+| Language support | English + Hindi (`eng+hin` — 163 languages available) |
+| Python wrapper | `pytesseract` + `Pillow` for image handling |
+| New API field | `extracted_text` returned in `/analyze-image` response |
+| UI improvement | Image thumbnail preview + collapsible OCR text section |
+
+### Problems faced
+- Tesseract binary wasn't installed — `pytesseract` is just a Python wrapper, the actual OCR engine must be installed separately via `brew install tesseract tesseract-lang`.
+- Hindi language pack (`hin`) only available with `tesseract-lang` (full 685MB pack) — added auto-fallback to English-only if Hindi pack missing.
+
+---
+
 _More entries will be added as we build each feature._
