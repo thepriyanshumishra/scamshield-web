@@ -240,7 +240,7 @@ def generate_arcade_level(force_scam: bool) -> dict:
     
     try:
         response = client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama-3.3-70b-versatile",
             messages=[
                 {"role": "system", "content": ARCADE_PROMPT},
                 {"role": "user", "content": constraint}
