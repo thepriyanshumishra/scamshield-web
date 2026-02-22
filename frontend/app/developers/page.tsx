@@ -8,8 +8,8 @@ export default function DevelopersPage() {
     const [activeTab, setActiveTab] = useState<"curl" | "python" | "node">("curl");
 
     const codeSnippets = {
-        curl: `curl -X POST "https://api.scamshield.app/v1/analyze-text" \\
-  -H "Authorization: Bearer sk_live_YOUR_API_KEY" \\
+        curl: `curl -X POST "http://127.0.0.1:8000/analyze-text" \\
+  -H "Authorization: Bearer sk_mock_HACKATHON_DEMO" \\
   -H "Content-Type: application/json" \\
   -d '{
     "message": "Click here to claim your free iPhone: http://free-phishing.com"
@@ -17,9 +17,10 @@ export default function DevelopersPage() {
 
         python: `import requests
 
-url = "https://api.scamshield.app/v1/analyze-text"
+# Point to your local FastAPI backend
+url = "http://127.0.0.1:8000/analyze-text"
 headers = {
-    "Authorization": "Bearer sk_live_YOUR_API_KEY",
+    "Authorization": "Bearer sk_mock_HACKATHON_DEMO",
     "Content-Type": "application/json"
 }
 data = {
@@ -31,12 +32,13 @@ print(response.json())`,
 
         node: `const axios = require('axios');
 
+// Point to your local FastAPI backend
 const analyzeMessage = async () => {
-  const response = await axios.post('https://api.scamshield.app/v1/analyze-text', {
+  const response = await axios.post('http://127.0.0.1:8000/analyze-text', {
     message: "Click here to claim your free iPhone: http://free-phishing.com"
   }, {
     headers: {
-      'Authorization': 'Bearer sk_live_YOUR_API_KEY',
+      'Authorization': 'Bearer sk_mock_HACKATHON_DEMO',
       'Content-Type': 'application/json'
     }
   });
@@ -56,7 +58,7 @@ analyzeMessage();`
     "Too good to be true offer"
   ],
   "advice": "Do not click. Legitimate companies do not give away free iPhones via random SMS links.",
-  "ledger_hash": "0x4f...a1b"
+  "extracted_text": ""
 }`;
 
     return (
