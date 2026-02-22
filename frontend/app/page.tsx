@@ -116,7 +116,7 @@ export default function Home() {
             placeholder="e.g. Congratulations! Your bank account has been selected for a ₹50,000 reward. Share your OTP to claim..."
             value={message}
             onChange={handleMessageChange}
-            className="w-full p-4 font-mono text-sm border-2 border-black shadow-neo focus:outline-none focus:shadow-neo-yellow resize-none"
+            className="w-full p-4 font-mono text-sm border-2 border-black shadow-neo hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all focus:outline-none focus:-translate-y-1 focus:shadow-[6px_6px_0px_rgba(0,0,0,1)] resize-none"
           />
         </div>
 
@@ -135,7 +135,7 @@ export default function Home() {
             type="file"
             accept="image/*"
             onChange={handleImageChange}
-            className="w-full border-2 border-black p-3 font-mono text-sm file:mr-4 file:py-2 file:px-4 file:border-2 file:border-black file:font-bold file:bg-neo-yellow file:cursor-pointer cursor-pointer"
+            className="w-full border-2 border-black p-3 font-mono text-sm hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all bg-white file:mr-4 file:py-2 file:px-4 file:border-2 file:border-black file:font-bold file:bg-neo-yellow file:cursor-pointer cursor-pointer"
           />
 
           {/* Thumbnail preview */}
@@ -163,7 +163,7 @@ export default function Home() {
           id="analyze-button"
           onClick={handleAnalyze}
           disabled={loading}
-          className="btn-neo w-full py-4 text-lg disabled:opacity-50"
+          className="btn-neo w-full py-4 text-lg active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Analyzing…" : "⚡ Analyze Now"}
         </button>
@@ -171,7 +171,7 @@ export default function Home() {
 
       {/* ── Result card ── */}
       {result && (
-        <section className="max-w-3xl mx-auto px-6 pb-16">
+        <section className="max-w-3xl mx-auto px-6 pb-16 animate-in slide-in-from-bottom-8 fade-in duration-500">
           <ResultCard result={result} onStore={handleStoreOnBlockchain} />
         </section>
       )}
@@ -256,7 +256,7 @@ function ResultCard({
         <button
           id="store-blockchain-button"
           onClick={onStore}
-          className="btn-neo-red w-full"
+          className="btn-neo-red w-full active:translate-y-1 active:shadow-none transition-all"
         >
           ⛓️ Add to Blockchain Ledger
         </button>
