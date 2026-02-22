@@ -57,6 +57,7 @@ class AnalysisResult(BaseModel):
     category: str            # e.g. "bank scam"
     red_flags: list[str]
     advice: str
+    extracted_text: str = ""  # OCR text from image (empty for text-input requests)
 
 
 class StoreRequest(BaseModel):
@@ -126,6 +127,8 @@ async def analyze_image(file: UploadFile = File(...)):
     print(f"📝 OCR extracted ({len(extracted_text)} chars): {extracted_text[:120]}…")
 
     result = analyse_text(extracted_text)
+    # Attach the OCR text so the frontend can show it to the user
+    result["extracted_text"] = extracted_text
     return result
 
 
