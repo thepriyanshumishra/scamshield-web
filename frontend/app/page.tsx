@@ -89,7 +89,10 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white" style={{
+      backgroundImage: "radial-gradient(#e5e7eb 1.5px, transparent 1.5px)",
+      backgroundSize: "30px 30px"
+    }}>
       <Navbar />
 
       {/* ── Hero ── */}
@@ -97,7 +100,7 @@ export default function Home() {
         <div className="inline-block bg-neo-yellow border-2 border-black shadow-neo px-3 py-1 text-sm font-bold mb-4">
           AI + Web3 Powered
         </div>
-        <h1 className="text-5xl md:text-6xl font-black leading-none mb-4 tracking-tighter">
+        <h1 className="text-5xl md:text-7xl font-black leading-none mb-6 tracking-tighter text-black drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
           Detect scams instantly using AI
         </h1>
         <p className="text-lg text-gray-600 font-medium">
@@ -163,9 +166,9 @@ export default function Home() {
           id="analyze-button"
           onClick={handleAnalyze}
           disabled={loading}
-          className="btn-neo w-full py-4 text-lg active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-neo-yellow text-black border-4 border-black p-5 text-xl font-black shadow-[8px_8px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[12px_12px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all w-full disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-tighter"
         >
-          {loading ? "Analyzing…" : "⚡ Analyze Now"}
+          {loading ? "Analyzing…" : "⚡ Analyze Message Now"}
         </button>
       </section>
 
@@ -193,7 +196,7 @@ function ResultCard({
 
   return (
     <div
-      className={`border-2 border-black p-6 space-y-5 ${isScam ? "shadow-neo-red" : "shadow-neo-green"
+      className={`bg-white border-4 border-black p-8 space-y-6 shadow-[12px_12px_0px_rgba(0,0,0,1)] ${isScam ? "border-neo-red" : "border-neo-green"
         }`}
     >
       {/* Header */}

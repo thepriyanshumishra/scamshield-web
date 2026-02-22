@@ -1,0 +1,26 @@
+INFO:     Will watch for changes in these directories: ['/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [53520] using WatchFiles
+INFO:     Started server process [53584]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+🌍 Tesseract OCR: 124 language packs loaded → afr+amh+ara+asm+aze+aze_cyrl+bel+ben+bod+bos+bre+bul+cat+ceb+ces+chi_sim+chi_sim…
+✅ Groq API key loaded.
+⚠️  Groq Arcade Error: Error code: 400 - {'error': {'message': 'The model `llama3-8b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.', 'type': 'invalid_request_error', 'code': 'model_decommissioned'}}
+INFO:     127.0.0.1:49515 - "GET /arcade/generate HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'groq_service.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [53584]
+INFO:     Started server process [53868]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+🌍 Tesseract OCR: 124 language packs loaded → afr+amh+ara+asm+aze+aze_cyrl+bel+ben+bod+bos+bre+bul+cat+ceb+ces+chi_sim+chi_sim…
+✅ Groq API key loaded.
+INFO:     127.0.0.1:49528 - "GET /arcade/generate HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [53868]
+INFO:     Stopping reloader process [53520]

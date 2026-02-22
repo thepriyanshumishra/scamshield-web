@@ -43,7 +43,10 @@ export default function LedgerPage() {
     };
 
     return (
-        <main className="min-h-screen bg-white">
+        <main className="min-h-screen bg-white" style={{
+            backgroundImage: "radial-gradient(#e5e7eb 1.5px, transparent 1.5px)",
+            backgroundSize: "30px 30px"
+        }}>
             <Navbar />
 
             <section className="max-w-4xl mx-auto px-6 pt-16 pb-10">
@@ -64,9 +67,9 @@ export default function LedgerPage() {
                         <p className="text-xs font-bold uppercase text-gray-500">Total Scams Stored</p>
                         <p className="text-4xl font-black mt-1">{total}</p>
                     </div>
-                    <div className="neo-card px-6 py-4 flex-1 min-w-[140px] bg-neo-green text-black">
-                        <p className="text-xs font-bold uppercase">Status</p>
-                        <p className="text-lg font-black mt-1">🟢 Live on Polygon Amoy</p>
+                    <div className="neo-card px-6 py-4 flex-1 min-w-[140px] bg-neo-green border-4 border-black shadow-[4px_4px_0px_0px_#000] text-black">
+                        <p className="text-xs font-black uppercase tracking-widest text-black/60">Network Status</p>
+                        <p className="text-lg font-black mt-1 animate-pulse">📡 SYNCED WITH POLYGON</p>
                     </div>
                 </div>
 
@@ -121,8 +124,8 @@ export default function LedgerPage() {
 
             {/* Popup Modal */}
             {selectedScam && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="neo-card bg-white max-w-lg w-full p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+                    <div className="bg-white border-4 border-black shadow-[16px_16px_0px_rgba(0,0,0,1)] max-w-lg w-full p-8 animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-start mb-4">
                             <h2 className="text-2xl font-black">Transaction Details</h2>
                             <button

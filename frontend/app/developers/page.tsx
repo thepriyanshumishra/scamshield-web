@@ -62,7 +62,10 @@ analyzeMessage();`
 }`;
 
     return (
-        <main className="min-h-screen bg-black text-white font-sans">
+        <main className="min-h-screen bg-black text-white font-sans" style={{
+            backgroundImage: "radial-gradient(#333 1.5px, transparent 1.5px)",
+            backgroundSize: "30px 30px"
+        }}>
             <Navbar />
 
             {/* Hero Section */}
