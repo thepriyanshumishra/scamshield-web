@@ -65,11 +65,41 @@ class StoreRequest(BaseModel):
     category: str
 
 
+# ── OCR: build language string once at import time ───────────────────────────
+def _build_lang_string() -> str:
+    """
+    Dynamically fetch all installed Tesseract language packs and join them
+    into a single lang string (e.g. 'eng+hin+fra+deu+...').
+
+    Falls back to 'eng+hin' if Tesseract isn't installed yet.
+    Excludes special non-text packs: osd (orientation) and snum (digits).
+    """
+    try:
+        import pytesseract
+        langs = pytesseract.get_languages(config="")
+        # Filter out utility packs that aren't real languages
+        langs = [l for l in langs if l not in ("osd", "snum")]
+        if langs:
+            lang_str = "+".join(sorted(langs))
+            print(f"🌍 Tesseract OCR: {len(langs)} language packs loaded → {lang_str[:80]}…")
+            return lang_str
+    except Exception as e:
+        print(f"⚠️  Could not list Tesseract languages: {e}")
+    return "eng+hin"  # safe fallback
+
+
+_TESSERACT_LANGS = _build_lang_string()
+
+
 # ── OCR helper ───────────────────────────────────────────────────────────────
 def _extract_text_from_image(image_bytes: bytes) -> str:
     """
-    Run Tesseract OCR on image bytes.
-    Supports English + Hindi (lang='eng+hin').
+    Run Tesseract OCR on image bytes using ALL installed language packs.
+
+    Fallback chain:
+      1. All installed langs (e.g. eng+hin+fra+deu+... 163 packs)
+      2. eng+hin   — if the full multi-lang call fails
+      3. eng       — last resort
 
     Returns extracted text, or a descriptive error string if Tesseract
     is not installed (so the AI still receives something useful).
@@ -84,16 +114,17 @@ def _extract_text_from_image(image_bytes: bytes) -> str:
         if image.mode not in ("RGB", "L"):
             image = image.convert("RGB")
 
-        # Try English + Hindi first; fall back to English-only if Hindi lang pack missing
-        try:
-            text = pytesseract.image_to_string(image, lang="eng+hin")
-        except pytesseract.TesseractError:
-            text = pytesseract.image_to_string(image, lang="eng")
+        # Try all languages, fall back progressively
+        for lang in (_TESSERACT_LANGS, "eng+hin", "eng"):
+            try:
+                text = pytesseract.image_to_string(image, lang=lang)
+                text = text.strip()
+                if text:
+                    return text
+            except pytesseract.TesseractError:
+                continue  # try next fallback
 
-        text = text.strip()
-        if not text:
-            return "[OCR returned empty text — image may be blurry or contain no text]"
-        return text
+        return "[OCR returned empty text — image may be blurry or contain no text]"
 
     except ImportError:
         return "[pytesseract not installed — run: pip install pytesseract Pillow]"
