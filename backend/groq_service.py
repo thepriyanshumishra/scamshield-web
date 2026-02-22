@@ -229,6 +229,34 @@ You must output ONLY valid JSON without markdown wrapping. Format:
   "explanation": "Short 1-2 sentence explanation of the red flags or safety indicators."
 }"""
 
+import random
+
+SCAM_THEMES = [
+    "Pig butchering (crypto romance scam)",
+    "Fake Bank KYC suspension",
+    "Delivery failure / customs fee",
+    "Fake job or task commission",
+    "Relative in trouble (Hi Mom/Dad need money)",
+    "Lottery or giveaway winner",
+    "Tax authority or police arrest threat",
+    "Tech support / refund scam",
+    "Subscription renewal for something they didn't buy",
+    "Compromised social media account warning"
+]
+
+SAFE_THEMES = [
+    "Doctor or dentist appointment reminder",
+    "Legitimate Netflix/Spotify password reset code",
+    "Friend texting about dinner plans",
+    "School or university update for students",
+    "Real estate agent confirming a viewing",
+    "Gym membership renewal reminder",
+    "Amazon package out for delivery notification",
+    "Library book due soon warning",
+    "Airline flight gate change notification",
+    "Colleague sending a Zoom link for a meeting"
+]
+
 def generate_arcade_level(force_scam: bool) -> dict:
     """
     Generates a fresh, realistic text message for the /arcade minigame.
@@ -236,7 +264,11 @@ def generate_arcade_level(force_scam: bool) -> dict:
     """
     client = _get_client()
     
-    constraint = "Force-Scam: TRUE (Generate a highly deceptive scam message)" if force_scam else "Force-Scam: FALSE (Generate a completely safe, normal everyday message)"
+    # Randomly pick a specific theme to force the AI out of its default generation habits
+    theme = random.choice(SCAM_THEMES) if force_scam else random.choice(SAFE_THEMES)
+    
+    constraint = f"Force-Scam: TRUE\nTheme: {theme}\n(Generate a highly deceptive scam message based exactly on this theme)" if force_scam \
+                 else f"Force-Scam: FALSE\nTheme: {theme}\n(Generate a completely safe, normal everyday message based exactly on this theme)"
     
     try:
         response = client.chat.completions.create(
