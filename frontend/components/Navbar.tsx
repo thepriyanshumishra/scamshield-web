@@ -26,6 +26,8 @@ export default function Navbar() {
                 <NavLink href="/">Detect</NavLink>
                 <NavLink href="/ledger">Ledger</NavLink>
                 <NavLink href="/trends">Trends</NavLink>
+                <NavLink href="/arcade">Arcade 🎮</NavLink>
+                <NavLink href="/developers">API 💻</NavLink>
             </div>
         </nav>
     );

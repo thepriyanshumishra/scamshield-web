@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
+import LiveThreatToast from "@/components/LiveThreatToast";
 
 // ── Fonts ────────────────────────────────────────────────────────────────
 const spaceGrotesk = Space_Grotesk({
@@ -40,6 +41,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${spaceMono.variable} font-sans antialiased bg-white text-black min-h-screen`}
       >
         {children}
+        <LiveThreatToast />
       </body>
     </html>
   );
