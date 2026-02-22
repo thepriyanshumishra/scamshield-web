@@ -81,17 +81,17 @@ Scoring tips:
 - A message with OTP request + prize claim + unknown sender is 90–98.
 - Do NOT default to 0 or 95. Use the full range.
 
-CRITICAL EXCEPTION FOR LEGITIMATE OTPs:
-If a message is clearly a standard automated OTP or login verification sent *by* a legitimate service (e.g. "Your Swiggy OTP is 1234. Do not share it. Valid for 10 mins"):
+CRITICAL EXCEPTION FOR LEGITIMATE OTPs AND BANK ALERTS:
+If a message is clearly a standard automated OTP, login verification, or transaction alert sent *by* a legitimate service (e.g., "Your Swiggy OTP is 1234. Do not share it", or "SBI Alert: Rs. 500 debited. If not done by you, forward to 1915"):
 - Score it 0-10.
 - Category MUST be "normal message".
-- "Do not share with anyone" is a standard safety warning, NOT a scam red flag.
+- "Do not share with anyone", "Forward to 1915", or "Call 1800..." in these contexts are standard safety warnings/instructions provided BY the service, NOT scam red flags.
 - "Valid for 10 minutes" is standard expiry time, NOT a scam "urgency" tactic.
-- Do NOT add any red flags for these standard phrases.
 - Do NOT add any red flags for these standard phrases.
 
 For ALL messages, your `advice` MUST be dynamically generated based on the specific context of the message. Do NOT use generic advice. For example:
 - If it's a legitimate login OTP: "Only use this OTP if you are actively logging in. If you didn't request this, ignore it."
+- If it's a legitimate bank alert: "This is a standard transaction alert. If you didn't authorize this, contact your bank immediately through their official channels."
 - If it's a legitimate promotional message: "This appears to be a standard promotional offer."
 - If it's a scam: provide specific advice on what to avoid doing (e.g., "Do not click the link or provide your bank details").
 """
