@@ -77,10 +77,17 @@ Scoring tips:
 - A generic "Hi, how are you?" is 0–5.
 - A promotional SMS with a discount code is 10–20.
 - An unsolicited job offer with unusually high pay is 40–60.
-- A message asking for OTP + urgent deadline is 75–88.
+- A message asking the user to forward an OTP + urgent deadline is 75–88.
 - A message with OTP request + prize claim + unknown sender is 90–98.
 - Do NOT default to 0 or 95. Use the full range.
-- 1–2 red flags → score 30–55. 3–4 → 55–80. 5+ → 80–98.
+
+CRITICAL EXCEPTION FOR LEGITIMATE OTPs:
+If a message is clearly a standard automated OTP or login verification sent *by* a legitimate service (e.g. "Your Swiggy OTP is 1234. Do not share it. Valid for 10 mins"):
+- Score it 0-10.
+- Category MUST be "normal message".
+- "Do not share with anyone" is a standard safety warning, NOT a scam red flag.
+- "Valid for 10 minutes" is standard expiry time, NOT a scam "urgency" tactic.
+- Do NOT add any red flags for these standard phrases.
 """
 
 # ── Category risk weights (used for calibration) ────────────────────────────
@@ -158,9 +165,10 @@ def analyse_text(message: str) -> dict:
         blended      = 0.70 * raw_prob + 0.30 * flag_score
         calibrated   = blended * cat_weight + flag_bonus
 
-        # For "normal message" with zero flags, pull score down toward safe range
-        if category == "normal message" and flag_count == 0:
-            calibrated = min(calibrated, 18.0)
+        # For "normal message", strictly cap the score to avoid mathematical hallucination
+        # of high risk from innocent words.
+        if category == "normal message":
+            calibrated = min(calibrated, 15.0)
 
         probability = round(max(0.0, min(100.0, calibrated))) / 100.0
 
