@@ -1,5 +1,9 @@
 # ── Node / Next.js ────────────────────────────────────────────────────────
-node_modules/
+node_modules
+.DS_Store
+.env
+learning.md
+test_messages.md/
 .next/
 out/
 .npm
