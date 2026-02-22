@@ -16,7 +16,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from database import fetch_all_scams, init_db, insert_scam
+from blockchain_service import add_scam_to_ledger, get_all_scams
 from groq_service import analyse_text
 
 # ── Load environment variables from .env ───────────────────────────────────
@@ -37,9 +37,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup():
-    """Initialize the SQLite database on server start."""
-    init_db()
-
+    """Run validations on server start."""
     # Check API key is present
     if not os.environ.get("GROQ_API_KEY"):
         print("⚠️  WARNING: GROQ_API_KEY not set. Copy backend/.env.example → .env and add your key.")
@@ -166,19 +164,19 @@ async def analyze_image(file: UploadFile = File(...)):
 @app.post("/store-scam")
 async def store_scam(body: StoreRequest):
     """
-    Store a scam hash + category in SQLite.
+    Store a scam hash + category on the Polygon Amoy blockchain.
 
     Input : { "message_hash": "...", "category": "..." }
-    Output: { "id": <new row id>, "message": "Scam stored successfully." }
+    Output: { "tx_hash": <transaction hex>, "message": "Scam stored on-chain successfully." }
     """
-    new_id = insert_scam(body.message_hash, body.category)
-    return {"id": new_id, "message": "Scam stored successfully."}
+    tx_hash = add_scam_to_ledger(body.message_hash, body.category)
+    return {"tx_hash": tx_hash, "message": "Scam stored on-chain successfully."}
 
 
 @app.get("/scams")
 async def get_scams():
-    """Return all stored scam records."""
-    scams = fetch_all_scams()
+    """Return all stored scam records from the blockchain."""
+    scams = get_all_scams()
     return {"total": len(scams), "scams": scams}
 
 
