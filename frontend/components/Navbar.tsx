@@ -11,7 +11,7 @@ export default function Navbar() {
     return (
         <nav className="w-full border-b-4 border-black bg-white px-6 py-4 flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link href="/" className="flex items-center gap-2 group text-black">
                 <span className="text-2xl font-black tracking-tighter">
                     🛡️{" "}
                     <span className="bg-neo-yellow px-1 border-2 border-black shadow-neo-sm group-hover:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px] transition-all duration-100">
@@ -38,7 +38,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
         <Link
             href={href}
             className="
-        px-4 py-2 font-bold text-sm
+        px-4 py-2 font-bold text-sm text-black
         border-2 border-transparent
         hover:border-black hover:bg-neo-yellow hover:shadow-neo-sm
         hover:translate-x-[1px] hover:translate-y-[1px]

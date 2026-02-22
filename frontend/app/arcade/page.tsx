@@ -69,7 +69,10 @@ export default function ArcadePage() {
     }
 
     return (
-        <main className="min-h-screen bg-neo-blue text-white flex flex-col">
+        <main className="min-h-screen bg-neo-blue text-white flex flex-col" style={{
+            backgroundImage: "radial-gradient(#000 2px, transparent 2px)",
+            backgroundSize: "30px 30px"
+        }}>
             <Navbar />
 
             <section className="flex-1 max-w-2xl w-full mx-auto px-6 py-12 flex flex-col justify-center">
@@ -79,12 +82,24 @@ export default function ArcadePage() {
                     <div className="inline-block bg-neo-yellow text-black border-2 border-black shadow-neo px-3 py-1 text-sm font-bold mb-4">
                         ScamShield Arcade
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-black tracking-tighter">
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tighter mix-blend-difference text-white drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]">
                         Can you outsmart the AI?
                     </h1>
-                    <p className="font-bold mt-2 text-white/80">
-                        {gameState !== "GAMEOVER" && `Level ${currentLevel + 1} of ${LEVEL_DATA.length}`}
-                    </p>
+
+                    {/* Visual Progress Pips */}
+                    {gameState !== "GAMEOVER" && (
+                        <div className="flex justify-center gap-2 mt-6">
+                            {LEVEL_DATA.map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-6 h-6 border-2 border-black ${i < currentLevel ? "bg-neo-green" :
+                                            i === currentLevel ? "bg-neo-yellow animate-pulse" :
+                                                "bg-white"
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {gameState === "GAMEOVER" ? (
@@ -113,32 +128,32 @@ export default function ArcadePage() {
                         </button>
                     </div>
                 ) : (
-                    <div className="neo-card bg-white text-black p-6 md:p-8 animate-in fade-in duration-300">
+                    <div className="neo-card bg-white text-black p-6 md:p-8 animate-in fade-in zoom-in-95 duration-300 shadow-[12px_12px_0px_rgba(0,0,0,1)]">
 
                         {/* The Message */}
-                        <div className="bg-gray-100 p-6 border-2 border-black mb-8 relative">
-                            <span className="absolute -top-3 left-4 bg-black text-white text-xs font-bold px-2 py-1">
-                                INCOMING MESSAGE
+                        <div className="bg-[#fff9e6] p-8 border-4 border-black mb-10 relative shadow-inner">
+                            <span className="absolute -top-4 left-6 bg-black text-neo-yellow text-sm font-black px-4 py-1 uppercase tracking-widest">
+                                Incoming Data
                             </span>
-                            <p className="font-mono text-lg font-medium leading-relaxed">
+                            <p className="font-mono text-xl font-bold leading-relaxed text-gray-800">
                                 &quot;{level.text}&quot;
                             </p>
                         </div>
 
                         {/* Question */}
                         {gameState === "PLAYING" && (
-                            <div className="space-y-4">
-                                <p className="text-center font-black text-xl mb-4">Is this a scam?</p>
-                                <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+                                <p className="text-center font-black text-2xl mb-6 uppercase tracking-widest border-b-4 border-black inline-block px-4 pb-1 mx-auto block w-max">Is this a scam?</p>
+                                <div className="grid grid-cols-2 gap-6">
                                     <button
                                         onClick={() => handleGuess(true)}
-                                        className="btn-neo-red py-6 text-xl active:translate-y-1 active:shadow-none transition-all hover:-translate-y-1 hover:shadow-neo"
+                                        className="btn-neo-red py-8 text-2xl font-black active:translate-y-2 active:shadow-none transition-all hover:-translate-y-2 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)]"
                                     >
                                         🚨 SCAM
                                     </button>
                                     <button
                                         onClick={() => handleGuess(false)}
-                                        className="btn-neo-green py-6 text-xl active:translate-y-1 active:shadow-none transition-all hover:-translate-y-1 hover:shadow-neo"
+                                        className="btn-neo-green py-8 text-2xl font-black active:translate-y-2 active:shadow-none transition-all hover:-translate-y-2 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] text-black"
                                     >
                                         ✅ SAFE
                                     </button>
