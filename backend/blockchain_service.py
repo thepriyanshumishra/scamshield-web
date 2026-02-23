@@ -1,101 +1,58 @@
 import os
 import json
-from dotenv import load_dotenv
-from web3 import Web3
-from web3.middleware import ExtraDataToPOAMiddleware
+import uuid
+import time
 
-load_dotenv()
+# Mock Database File for Hackathon Demo
+DB_FILE = os.path.join(os.path.dirname(__file__), "scams.json")
 
-RPC_URL = os.getenv("WEB3_PROVIDER_URI", "https://rpc-amoy.polygon.technology")
-PRIVATE_KEY = os.getenv("WALLET_PRIVATE_KEY")
-CONTRACT_ADDRESS = os.getenv("SCAM_LEDGER_ADDRESS")
+def _load_data() -> list:
+    """Helper to load the mock ledger data from the JSON file."""
+    if not os.path.exists(DB_FILE):
+        return []
+    try:
+        with open(DB_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error reading {DB_FILE}: {e}")
+        return []
 
-# Initialize Web3
-w3 = Web3(Web3.HTTPProvider(RPC_URL))
-w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-# Load ABI
-abi_path = os.path.join(os.path.dirname(__file__), "ScamLedgerABI.json")
-try:
-    with open(abi_path, "r") as f:
-        CONTRACT_ABI = json.load(f)
-except FileNotFoundError:
-    CONTRACT_ABI = []
-    print("WARNING: ScamLedgerABI.json not found!")
-
-if CONTRACT_ADDRESS and CONTRACT_ABI:
-    contract = w3.eth.contract(address=CONTRACT_ADDRESS, abi=CONTRACT_ABI)
-else:
-    contract = None
+def _save_data(data: list) -> None:
+    """Helper to save the mock ledger data to the JSON file."""
+    try:
+        with open(DB_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+    except Exception as e:
+        print(f"Error writing {DB_FILE}: {e}")
 
 def add_scam_to_ledger(message_hash: str, category: str) -> str:
     """
-    Sends a transaction to the Polygon Amoy blockchain to store a scam hash.
-    Returns the transaction hash as a hex string.
+    Simulates sending a transaction to the blockchain.
+    Stores the scam data in a local JSON file to guarantee it works flawlessly for demos.
+    Returns a realistic-looking fake transaction hash.
     """
-    if not contract or not PRIVATE_KEY:
-        raise Exception("Blockchain not configured properly (missing contract or private key)")
-
-    account = w3.eth.account.from_key(PRIVATE_KEY)
-
-    # Estimate gas needed
-    estimated_gas = contract.functions.addScamHash(message_hash, category).estimate_gas({'from': account.address})
+    data = _load_data()
     
-    # Get current fee data for EIP-1559 transaction
-    base_fee = w3.eth.get_block('latest').baseFeePerGas
-    max_priority_fee = w3.eth.max_priority_fee
-    max_fee = base_fee * 2 + max_priority_fee
+    new_record = {
+        "hash": message_hash,
+        "category": category,
+        "timestamp": int(time.time()),
+    }
     
-    # Get latest nonce
-    nonce = w3.eth.get_transaction_count(account.address)
+    data.append(new_record)
+    _save_data(data)
     
-    # Build transaction
-    transaction = contract.functions.addScamHash(message_hash, category).build_transaction({
-        'chainId': w3.eth.chain_id, # Dynamically fetch chain ID
-        'gas': estimated_gas + 20000, # small cushion
-        'maxFeePerGas': max_fee,
-        'maxPriorityFeePerGas': max_priority_fee,
-        'nonce': nonce,
-    })
-    
-    # Sign transaction
-    signed_txn = w3.eth.account.sign_transaction(transaction, private_key=PRIVATE_KEY)
-    
-    # Send transaction
-    tx_hash = w3.eth.send_raw_transaction(signed_txn.raw_transaction)
-    
-    receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-    
-    if receipt.status != 1:
-        raise Exception("Transaction failed on-chain")
-        
-    return tx_hash.hex()
-
+    # Generate a fake Web3 transaction hash (e.g., 0xb9a32f...)
+    fake_tx_hash = "0x" + str(uuid.uuid4()).replace("-", "") + str(uuid.uuid4()).replace("-", "")
+    return fake_tx_hash
 
 def get_all_scams() -> list:
     """
-    Fetches all scams from the blockchain.
+    Fetches all scams from the mock JSON ledger.
     Returns a list of dictionaries: [{"hash": "...", "category": "...", "timestamp": int}]
     """
-    if not contract:
-        return []
-        
-    results = []
-    try:
-        total_scams = contract.functions.getTotalScams().call()
-        limit = min(total_scams, 100)
-        for i in range(total_scams - 1, total_scams - 1 - limit, -1):
-            try:
-                scam_data = contract.functions.getScamByIndex(i).call()
-                results.append({
-                    "hash": scam_data[0],
-                    "category": scam_data[1],
-                    "timestamp": scam_data[2]
-                })
-            except Exception as e:
-                print(f"Error fetching index {i}: {e}")
-                break
-    except Exception as e:
-        print(f"Blockchain fetch failed: {e}")
-
-    return results
+    data = _load_data()
+    
+    # The frontend expects them in order, but the original contract 
+    # fetched them newest first. We reverse the list to match the Web3 behavior.
+    return list(reversed(data))
