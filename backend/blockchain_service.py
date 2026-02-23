@@ -51,7 +51,7 @@ def add_scam_to_ledger(message_hash: str, category: str) -> str:
     
     # Build transaction
     transaction = contract.functions.addScamHash(message_hash, category).build_transaction({
-        'chainId': 80002, # Amoy chain ID
+        'chainId': w3.eth.chain_id, # Dynamically fetch chain ID
         'gas': estimated_gas + 20000, # small cushion
         'maxFeePerGas': max_fee,
         'maxPriorityFeePerGas': max_priority_fee,
