@@ -102,13 +102,25 @@ export default function Home() {
     const hash = await sha256(normalized);
     console.log("[ScamShield] Generated hash:", hash);
 
-    await fetch("http://127.0.0.1:8000/store-scam", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message_hash: hash, category: result.category }),
-    });
-    alert("✅ Scam hash stored in the ledger!");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/store-scam", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message_hash: hash, category: result.category }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ detail: "Unknown server error" }));
+        alert(`❌ Blockchain storage failed:\n\n${errorData.detail}`);
+        return;
+      }
+
+      alert("✅ Scam hash stored in the ledger!");
+    } catch {
+      alert("❌ Cannot reach backend. Make sure FastAPI is running on port 8000.");
+    }
   }
+
 
   return (
     <main className="min-h-screen bg-white" style={{

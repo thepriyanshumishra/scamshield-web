@@ -176,8 +176,28 @@ async def store_scam(body: StoreRequest):
     Input : { "message_hash": "...", "category": "..." }
     Output: { "tx_hash": <transaction hex>, "message": "Scam stored on-chain successfully." }
     """
-    tx_hash = add_scam_to_ledger(body.message_hash, body.category)
-    return {"tx_hash": tx_hash, "message": "Scam stored on-chain successfully."}
+    try:
+        tx_hash = add_scam_to_ledger(body.message_hash, body.category)
+        return {"tx_hash": tx_hash, "message": "Scam stored on-chain successfully."}
+    except Exception as e:
+        error_msg = str(e)
+        # Provide a human-readable diagnosis for the most common failure modes
+        if "insufficient funds" in error_msg:
+            detail = (
+                "Wallet has insufficient MATIC for gas. "
+                "Please top up the testnet wallet at https://faucet.polygon.technology/"
+            )
+        elif "nonce" in error_msg.lower():
+            detail = "Transaction nonce conflict — please wait a moment and retry."
+        elif "connection" in error_msg.lower() or "rpc" in error_msg.lower():
+            detail = "Cannot reach Polygon Amoy RPC. Check your ALCHEMY_URL in backend/.env."
+        else:
+            detail = f"Blockchain error: {error_msg}"
+
+        print(f"❌ /store-scam failed: {detail}")
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail=detail)
+
 
 
 @app.get("/scams")
