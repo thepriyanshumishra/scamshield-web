@@ -3,7 +3,10 @@ node_modules
 .DS_Store
 .env
 learning.md
-test_messages.md/
+test_messages.md
+FULL_CODE_WALKTHROUGH.md
+PROJECT_SPEC.md
+anvil.log
 .next/
 out/
 .npm

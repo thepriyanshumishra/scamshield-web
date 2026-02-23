@@ -171,33 +171,18 @@ async def analyze_image(file: UploadFile = File(...)):
 @app.post("/store-scam")
 async def store_scam(body: StoreRequest):
     """
-    Store a scam hash + category on the Polygon Amoy blockchain.
+    Store a scam hash + category in the persistent ledger.
 
     Input : { "message_hash": "...", "category": "..." }
-    Output: { "tx_hash": <transaction hex>, "message": "Scam stored on-chain successfully." }
+    Output: { "tx_hash": <hex string>, "message": "Scam stored successfully." }
     """
     try:
         tx_hash = add_scam_to_ledger(body.message_hash, body.category)
-        return {"tx_hash": tx_hash, "message": "Scam stored on-chain successfully."}
+        return {"tx_hash": tx_hash, "message": "Scam stored successfully."}
     except Exception as e:
-        error_msg = str(e)
-        # Provide a human-readable diagnosis for the most common failure modes
-        if "insufficient funds" in error_msg:
-            detail = (
-                "Wallet has insufficient MATIC for gas. "
-                "Please top up the testnet wallet at https://faucet.polygon.technology/"
-            )
-        elif "nonce" in error_msg.lower():
-            detail = "Transaction nonce conflict — please wait a moment and retry."
-        elif "connection" in error_msg.lower() or "rpc" in error_msg.lower():
-            detail = "Cannot reach Polygon Amoy RPC. Check your ALCHEMY_URL in backend/.env."
-        else:
-            detail = f"Blockchain error: {error_msg}"
-
-        print(f"❌ /store-scam failed: {detail}")
+        print(f"❌ /store-scam failed: {e}")
         from fastapi import HTTPException
-        raise HTTPException(status_code=503, detail=detail)
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/scams")
