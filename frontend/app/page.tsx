@@ -4,12 +4,18 @@ import Navbar from "@/components/Navbar";
 import { useState } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────
+interface HighlightedPhrase {
+  phrase: string;
+  danger: "high" | "medium";
+}
+
 interface AnalysisResult {
   probability: number;
   category: string;
   red_flags: string[];
+  highlighted_phrases?: HighlightedPhrase[];
   advice: string;
-  extracted_text?: string; // present only for image uploads
+  extracted_text?: string;
 }
 
 // ── Home Page — Scam Detection ────────────────────────────────────────────
@@ -175,10 +181,50 @@ export default function Home() {
       {/* ── Result card ── */}
       {result && (
         <section className="max-w-3xl mx-auto px-6 pb-16 animate-in slide-in-from-bottom-8 fade-in duration-500">
-          <ResultCard result={result} onStore={handleStoreOnBlockchain} />
+          <ResultCard result={result} onStore={handleStoreOnBlockchain} originalMessage={message} />
         </section>
       )}
     </main>
+  );
+}
+
+// ── Highlighted Message Component ─────────────────────────────────────────
+function HighlightedMessage({
+  text,
+  phrases,
+}: {
+  text: string;
+  phrases: HighlightedPhrase[];
+}) {
+  if (!phrases || phrases.length === 0) return <span>{text}</span>;
+
+  const escaped = phrases
+    .map((p) => p.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  const parts = text.split(regex);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        const match = phrases.find(
+          (p) => p.phrase.toLowerCase() === part.toLowerCase()
+        );
+        if (!match) return <span key={i}>{part}</span>;
+        if (match.danger === "high") {
+          return (
+            <mark key={i} className="bg-red-200 text-red-900 font-black px-0.5 rounded-sm border border-red-400 not-italic" title="⚠️ High danger">
+              {part}
+            </mark>
+          );
+        }
+        return (
+          <mark key={i} className="bg-orange-200 text-orange-900 font-bold px-0.5 rounded-sm border border-orange-400 not-italic" title="⚠️ Medium risk">
+            {part}
+          </mark>
+        );
+      })}
+    </>
   );
 }
 
@@ -186,144 +232,183 @@ export default function Home() {
 function ResultCard({
   result,
   onStore,
+  originalMessage,
 }: {
   result: AnalysisResult;
   onStore: () => void;
+  originalMessage: string;
 }) {
   const pct = Math.round(result.probability * 100);
   const isScam = pct >= 50;
   const [showOcrText, setShowOcrText] = useState(false);
 
+  const threatBarColor =
+    pct >= 76 ? "bg-neo-red" : pct >= 46 ? "bg-neo-orange" : "bg-neo-green";
+  const cardBorder = isScam
+    ? "border-neo-red shadow-[12px_12px_0px_rgba(255,36,36,0.5)]"
+    : "border-neo-green shadow-[12px_12px_0px_rgba(0,204,102,0.4)]";
+
+  const displayText = originalMessage || result.extracted_text || "";
+  const phrases = result.highlighted_phrases || [];
+
   return (
-    <div
-      className={`bg-white border-4 border-black p-8 space-y-6 shadow-[12px_12px_0px_rgba(0,0,0,1)] ${isScam ? "border-neo-red" : "border-neo-green"
-        }`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-2xl font-black">
-          {isScam ? "🚨 Scam Detected" : "✅ Looks Safe"}
-        </h2>
-        <span
-          className={`text-3xl font-black px-4 py-2 border-2 border-black shadow-neo-sm ${isScam ? "bg-neo-red text-white" : "bg-neo-green text-white"
-            }`}
-        >
-          {pct}% scam
-        </span>
-      </div>
+    <div className={`bg-white border-4 p-0 overflow-hidden ${cardBorder}`}>
 
-      {/* Category */}
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Category</span>
-        <p className="font-bold text-lg capitalize mt-0.5">{result.category}</p>
-      </div>
-
-      {/* Red flags */}
-      <div>
-        <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Red Flags</span>
-        <ul className="mt-1 space-y-1">
-          {result.red_flags.map((flag, i) => (
-            <li key={i} className="flex gap-2 text-sm font-medium">
-              <span className="text-neo-red font-bold">▸</span> {flag}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Advice */}
-      <div className="bg-neo-yellow border-2 border-black p-4 shadow-neo-sm">
-        <span className="text-xs font-bold uppercase tracking-wider">Safety Advice</span>
-        <p className="mt-1 text-sm font-semibold">{result.advice}</p>
-      </div>
-
-      {/* OCR extracted text — only shown for image uploads */}
-      {result.extracted_text && !result.extracted_text.startsWith("[") && (
-        <div className="border-2 border-black">
-          <button
-            onClick={() => setShowOcrText((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 font-bold text-sm bg-gray-50 hover:bg-neo-yellow transition-colors"
-          >
-            <span>📝 Text read from your image</span>
-            <span>{showOcrText ? "▲ Hide" : "▼ Show"}</span>
-          </button>
-          {showOcrText && (
-            <pre className="p-4 font-mono text-xs whitespace-pre-wrap bg-white border-t-2 border-black max-h-48 overflow-y-auto">
-              {result.extracted_text}
-            </pre>
-          )}
+      {/* ── Header Banner ── */}
+      <div className={`px-8 py-5 flex items-center justify-between flex-wrap gap-4 border-b-4 border-black ${isScam ? "bg-red-50" : "bg-green-50"}`}>
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-0.5">ScamShield AI · Analysis Complete</p>
+          <h2 className={`text-3xl font-black tracking-tighter ${isScam ? "text-neo-red" : "text-neo-green"}`}>
+            {isScam ? "🚨 SCAM DETECTED" : "✅ LOOKS SAFE"}
+          </h2>
         </div>
-      )}
-
-      {/* Add to blockchain & Print buttons */}
-      {isScam && (
-        <div className="flex gap-4 flex-col sm:flex-row mt-6">
-          <button
-            id="store-blockchain-button"
-            onClick={onStore}
-            className="btn-neo-red flex-1 active:translate-y-1 active:shadow-none transition-all"
-          >
-            ⛓️ Add to Blockchain Ledger
-          </button>
-          <button
-            onClick={() => window.print()}
-            className="btn-neo flex-1 active:translate-y-1 active:shadow-none transition-all"
-          >
-            📄 Download Police Report
-          </button>
+        <div className="text-right">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-gray-400 mb-0.5">Threat Score</p>
+          <p className={`text-5xl font-black leading-none ${isScam ? "text-neo-red" : "text-neo-green"}`}>
+            {pct}<span className="text-lg font-bold">%</span>
+          </p>
         </div>
-      )}
+      </div>
 
-      {/* ── Print-only Hidden Police Report Layout ── */}
-      {isScam && (
-        <div className="hidden print:block absolute top-0 left-0 w-full bg-white p-10 font-mono text-black">
-          <div className="border-4 border-black p-8 mb-8">
-            <h1 className="text-4xl font-black uppercase mb-2 border-b-4 border-black pb-4">
-              Cyber Security Incident Report
-            </h1>
-            <div className="flex justify-between font-bold mt-4">
-              <p>System: ScamShield AI Scanner</p>
-              <p>Date: {new Date().toLocaleString()}</p>
-            </div>
+      <div className="px-8 py-6 space-y-6">
+
+        {/* ── Threat Meter ── */}
+        <div>
+          <div className="flex justify-between mb-1.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Threat Level</span>
+            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 border border-black ${pct >= 76 ? "bg-neo-red text-white" : pct >= 50 ? "bg-neo-orange text-white" : "bg-neo-green text-white"
+              }`}>
+              {pct < 26 ? "LOW" : pct < 50 ? "MODERATE" : pct < 76 ? "HIGH" : "CRITICAL"}
+            </span>
           </div>
-
-          <div className="mb-8">
-            <h2 className="text-xl font-black bg-black text-white inline-block px-3 py-1 mb-2">
-              1. Incident Classification
-            </h2>
-            <div className="border-2 border-black p-4 text-lg">
-              <p><strong>Category:</strong> {result.category}</p>
-              <p><strong>AI Threat Confidence:</strong> {pct}%</p>
-            </div>
+          <div className="w-full bg-gray-200 border-2 border-black h-6 relative overflow-hidden">
+            <div
+              className={`h-full transition-all duration-700 ease-out ${threatBarColor}`}
+              style={{ width: `${pct}%` }}
+            />
+            {[25, 50, 75].map(tick => (
+              <div key={tick} className="absolute top-0 h-full w-px bg-black/20" style={{ left: `${tick}%` }} />
+            ))}
           </div>
+          <div className="flex justify-between text-[9px] font-bold text-gray-400 mt-1 px-0.5">
+            <span>SAFE</span><span>CAUTION</span><span>DANGER</span><span>CRITICAL</span>
+          </div>
+        </div>
 
-          <div className="mb-8">
-            <h2 className="text-xl font-black bg-black text-white inline-block px-3 py-1 mb-2">
-              2. Detected Red Flags
-            </h2>
-            <ul className="border-2 border-black p-4 list-disc list-inside space-y-2">
+        {/* ── Category chip ── */}
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Category</span>
+          <span className={`border-2 border-black px-3 py-1 font-black text-xs uppercase tracking-widest shadow-[3px_3px_0px_rgba(0,0,0,1)] ${isScam ? "bg-neo-red text-white" : "bg-neo-green text-white"
+            }`}>
+            {result.category}
+          </span>
+        </div>
+
+        {/* ── Analyzed Message with Highlights ── */}
+        {displayText && (
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Analyzed Message</p>
+            <div className="border-2 border-black bg-gray-50 p-4 font-mono text-sm leading-relaxed break-words">
+              <HighlightedMessage text={displayText} phrases={phrases} />
+            </div>
+            {phrases.length > 0 && (
+              <div className="flex items-center gap-5 mt-2 text-[10px] font-black uppercase tracking-wider">
+                <span className="flex items-center gap-1.5 text-gray-500">
+                  <span className="w-3 h-3 bg-red-200 border border-red-400 rounded-sm" /> High danger
+                </span>
+                <span className="flex items-center gap-1.5 text-gray-500">
+                  <span className="w-3 h-3 bg-orange-200 border border-orange-400 rounded-sm" /> Medium risk
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Red Flag Chips ── */}
+        {result.red_flags.length > 0 && (
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 mb-3">Red Flags Detected</p>
+            <div className="flex flex-wrap gap-2">
               {result.red_flags.map((flag, i) => (
-                <li key={i}>{flag}</li>
+                <span key={i} className="inline-flex items-center gap-1.5 bg-red-50 text-red-900 border-2 border-neo-red px-3 py-1.5 text-xs font-bold shadow-[2px_2px_0px_rgba(255,36,36,1)]">
+                  <span>⚠️</span> {flag}
+                </span>
               ))}
-            </ul>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-xl font-black bg-black text-white inline-block px-3 py-1 mb-2">
-              3. Preserved Evidence
-            </h2>
-            <div className="border-2 border-black p-4 whitespace-pre-wrap break-words">
-              {result.extracted_text && !result.extracted_text.startsWith("[")
-                ? result.extracted_text
-                : "Text Message/Raw Input."}
             </div>
           </div>
+        )}
 
-          <div className="mt-16 text-center text-sm font-bold opacity-60">
-            <p>Generated by ScamShield Network • Blockchain Immutable Registry</p>
-            <p>https://scamshield.app</p>
-          </div>
+        {/* ── Safety Advice ── */}
+        <div className="bg-neo-yellow border-4 border-black p-5 shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-2">🛡️ Safety Advice</p>
+          <p className="text-base font-bold leading-snug">{result.advice}</p>
         </div>
-      )}
+
+        {/* ── OCR accordion ── */}
+        {result.extracted_text && !result.extracted_text.startsWith("[") && (
+          <div className="border-2 border-black">
+            <button
+              onClick={() => setShowOcrText((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 font-bold text-sm bg-gray-50 hover:bg-neo-yellow transition-colors"
+            >
+              <span>📝 Text extracted from image</span>
+              <span>{showOcrText ? "▲ Hide" : "▼ Show"}</span>
+            </button>
+            {showOcrText && (
+              <pre className="p-4 font-mono text-xs whitespace-pre-wrap bg-white border-t-2 border-black max-h-48 overflow-y-auto">
+                {result.extracted_text}
+              </pre>
+            )}
+          </div>
+        )}
+
+        {/* ── CTA Buttons ── */}
+        {isScam && (
+          <div className="flex gap-4 flex-col sm:flex-row pt-2 border-t-4 border-black">
+            <button
+              id="store-blockchain-button"
+              onClick={onStore}
+              className="bg-neo-red text-white border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-sm uppercase tracking-widest"
+            >
+              ⛓️ Add to Blockchain Ledger
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="bg-white text-black border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-sm uppercase tracking-widest"
+            >
+              📄 Download Police Report
+            </button>
+          </div>
+        )}
+
+        {/* ── Print-only Police Report ── */}
+        {isScam && (
+          <div className="hidden print:block absolute top-0 left-0 w-full bg-white p-10 font-mono text-black">
+            <div className="border-4 border-black p-8 mb-8">
+              <h1 className="text-4xl font-black uppercase mb-2 border-b-4 border-black pb-4">Cyber Security Incident Report</h1>
+              <div className="flex justify-between font-bold mt-4">
+                <p>System: ScamShield AI Scanner</p>
+                <p>Date: {new Date().toLocaleString()}</p>
+              </div>
+            </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-black bg-black text-white inline-block px-3 py-1 mb-2">1. Classification</h2>
+              <div className="border-2 border-black p-4"><p><strong>Category:</strong> {result.category}</p><p><strong>Threat Score:</strong> {pct}%</p></div>
+            </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-black bg-black text-white inline-block px-3 py-1 mb-2">2. Red Flags</h2>
+              <ul className="border-2 border-black p-4 list-disc list-inside space-y-2">{result.red_flags.map((f, i) => <li key={i}>{f}</li>)}</ul>
+            </div>
+            <div className="mb-8">
+              <h2 className="text-xl font-black bg-black text-white inline-block px-3 py-1 mb-2">3. Evidence</h2>
+              <div className="border-2 border-black p-4 whitespace-pre-wrap break-words">{displayText}</div>
+            </div>
+            <div className="mt-16 text-center text-sm font-bold opacity-60">
+              <p>Generated by ScamShield Network • Blockchain Immutable Registry</p>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -335,3 +420,4 @@ async function sha256(text: string): Promise<string> {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
+

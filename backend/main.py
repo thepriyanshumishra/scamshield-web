@@ -51,12 +51,18 @@ class TextRequest(BaseModel):
     message: str
 
 
+class HighlightedPhrase(BaseModel):
+    phrase: str
+    danger: str  # "high" or "medium"
+
+
 class AnalysisResult(BaseModel):
-    probability: float       # 0.0 – 1.0
-    category: str            # e.g. "bank scam"
+    probability: float                              # 0.0 – 1.0
+    category: str                                   # e.g. "bank scam"
     red_flags: list[str]
+    highlighted_phrases: list[HighlightedPhrase] = []  # verbatim dangerous substrings
     advice: str
-    extracted_text: str = ""  # OCR text from image (empty for text-input requests)
+    extracted_text: str = ""                        # OCR text from image
 
 
 class StoreRequest(BaseModel):

@@ -69,7 +69,8 @@ You MUST reply with ONLY a valid JSON object — no explanation, no markdown, no
 {
   "probability": <integer 0–100 using the rubric above>,
   "category": <one of: "bank scam", "job scam", "courier scam", "lottery scam", "phishing", "normal message">,
-  "red_flags": [<list of specific suspicious phrases or patterns found, empty if safe>],
+  "red_flags": [<list of short descriptions of suspicious patterns found, empty if safe>],
+  "highlighted_phrases": [<list of objects: {"phrase": "exact verbatim substring from the message", "danger": "high" or "medium"}. Only include phrases that ACTUALLY appear word-for-word in the message. Empty array if safe.>],
   "advice": <one clear, actionable sentence of safety advice>
 }
 
@@ -157,32 +158,38 @@ def analyse_text(message: str) -> dict:
             red_flags = []
         red_flags = [str(f) for f in red_flags[:5]]
 
+        # ── Highlighted phrases ───────────────────────────────────────────
+        raw_phrases = result.get("highlighted_phrases", [])
+        if not isinstance(raw_phrases, list):
+            raw_phrases = []
+        highlighted_phrases = []
+        for p in raw_phrases[:8]:  # cap at 8 highlights
+            if isinstance(p, dict) and "phrase" in p and "danger" in p:
+                danger = p["danger"] if p["danger"] in ("high", "medium") else "medium"
+                highlighted_phrases.append({"phrase": str(p["phrase"]), "danger": danger})
+
         # ── Advice ────────────────────────────────────────────────────────
         advice = str(result.get("advice", "Stay cautious and verify the source."))
 
         # ── Calibration: blend model score with red-flag count + category ─
-        # This spreads scores across the full range instead of clustering at 0/90.
         flag_count   = len(red_flags)
-        flag_bonus   = flag_count * 4.0          # each red flag adds ~4 points
+        flag_bonus   = flag_count * 4.0
         cat_weight   = _CATEGORY_WEIGHT.get(category, 1.0)
-
-        # Weighted blend: 70% model score + 30% flag-based score
-        flag_score   = min(flag_count / 5 * 100, 100)   # 5 flags = 100 points
+        flag_score   = min(flag_count / 5 * 100, 100)
         blended      = 0.70 * raw_prob + 0.30 * flag_score
         calibrated   = blended * cat_weight + flag_bonus
 
-        # For "normal message", strictly cap the score to avoid mathematical hallucination
-        # of high risk from innocent words.
         if category == "normal message":
             calibrated = min(calibrated, 15.0)
 
         probability = round(max(0.0, min(100.0, calibrated))) / 100.0
 
         return {
-            "probability": probability,
-            "category":    category,
-            "red_flags":   red_flags,
-            "advice":      advice,
+            "probability":         probability,
+            "category":            category,
+            "red_flags":           red_flags,
+            "highlighted_phrases": highlighted_phrases,
+            "advice":              advice,
         }
 
     except json.JSONDecodeError as e:
