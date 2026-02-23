@@ -85,7 +85,23 @@ export default function Home() {
 
   async function handleStoreOnBlockchain() {
     if (!result) return;
-    const hash = await sha256(message || imageFile?.name || "image");
+
+    // ── FIX: Normalize the raw message BEFORE hashing. ────────────────────
+    // BEFORE (buggy): sha256(message) — any trailing space, case difference,
+    //   or extra newline from copy-paste would produce a completely different hash.
+    // AFTER  (fixed): normalizeForHash(message) — deterministic regardless of
+    //   cosmetic differences in whitespace/casing. The hash now depends only on
+    //   the semantic content, making it fully reproducible.
+    const rawInput = message || imageFile?.name || "image";
+    const normalized = normalizeForHash(rawInput);
+
+    // Console log so you can verify the normalized string during demos.
+    // Two identical messages should always log the exact same string here.
+    console.log("[ScamShield] Hashing normalized input:", JSON.stringify(normalized));
+
+    const hash = await sha256(normalized);
+    console.log("[ScamShield] Generated hash:", hash);
+
     await fetch("http://127.0.0.1:8000/store-scam", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -413,11 +429,25 @@ function ResultCard({
   );
 }
 
+// ── Hash Normalization ────────────────────────────────────────────────────
+// WHY: Cryptographic hash functions are deterministic — same input = same
+// output. But if the raw message string contains hidden differences (trailing
+// spaces, different casing, extra newlines from copy-paste), the hash changes.
+// WHAT: We normalize to a canonical form BEFORE hashing so that
+// semantically identical messages always produce the identical SHA-256 hash.
+function normalizeForHash(text: string): string {
+  return text
+    .trim()           // remove leading/trailing whitespace
+    .toLowerCase()    // case-insensitive — "OTP" and "otp" are the same message
+    .replace(/\s+/g, " "); // collapse all whitespace (spaces, tabs, newlines) to a single space
+}
+
 // ── SHA-256 utility ───────────────────────────────────────────────────────
+// Pure function — same string in always produces the same hex digest out.
+// Non-determinism was upstream (un-normalized input), NOT here.
 async function sha256(text: string): Promise<string> {
   const msgBuffer = new TextEncoder().encode(text);
   const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
-
