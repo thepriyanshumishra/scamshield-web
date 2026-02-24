@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.db
+*.db-shm
+*.db-wal
+.env
+server.log
+uvicorn.log
+ml_data/training_data.db
+ml_data/exports/
+.git/
+.github/
+.DS_Store

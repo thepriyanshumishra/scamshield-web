@@ -28,6 +28,9 @@ const categoryColorMap: Record<string, string> = {
     "normal message": "#2ECC71", // neo-green
 };
 
+// ── Configuration ──────────────────────────────────────────────────────────
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
 // ── Trends Dashboard Page ─────────────────────────────────────────────────
 /**
  * Visualises scam detection statistics.
@@ -40,7 +43,7 @@ export default function TrendsPage() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        fetch("http://127.0.0.1:8000/scams")
+        fetch(`${API_BASE_URL}/scams`)
             .then((r) => r.json())
             .then((data) => {
                 setScams(data.scams ?? []);

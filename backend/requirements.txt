@@ -1,5 +1,6 @@
-SEfastapi
+fastapi
 uvicorn[standard]
+gunicorn
 groq
 pytesseract
 Pillow

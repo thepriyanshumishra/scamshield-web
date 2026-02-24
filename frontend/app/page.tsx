@@ -21,6 +21,8 @@ interface AnalysisResult {
   advice: string;
   extracted_text?: string;
 }
+// ── Configuration ──────────────────────────────────────────────────────────
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 // ── Home Page — Scam Detection ────────────────────────────────────────────
 export default function Home() {
@@ -94,7 +96,7 @@ export default function Home() {
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        res = await fetch("http://127.0.0.1:8000/analyze-image", {
+        res = await fetch(`${API_BASE_URL}/analyze-image`, {
           method: "POST",
           body: formData,
         });
@@ -103,13 +105,13 @@ export default function Home() {
         const isUrl = /^(https?:\/\/)/i.test(message.trim());
 
         if (isUrl) {
-          res = await fetch("http://127.0.0.1:8000/analyze-url", {
+          res = await fetch(`${API_BASE_URL}/analyze-url`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: message.trim() }),
           });
         } else {
-          res = await fetch("http://127.0.0.1:8000/analyze-text", {
+          res = await fetch(`${API_BASE_URL}/analyze-text`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message }),
@@ -195,7 +197,7 @@ export default function Home() {
     console.log("[ScamShield] Generated hash:", hash);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/store-scam", {
+      const res = await fetch(`${API_BASE_URL}/store-scam`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message_hash: hash, category: result.category }),
@@ -384,7 +386,7 @@ function ResultCard({
     }
     setFeedbackLoading(true);
     try {
-      await fetch("http://127.0.0.1:8000/feedback", {
+      await fetch(`${API_BASE_URL}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

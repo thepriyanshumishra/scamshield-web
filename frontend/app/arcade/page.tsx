@@ -10,6 +10,9 @@ type LevelData = {
     explanation: string;
 };
 
+// ── Configuration ──────────────────────────────────────────────────────────
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+
 // ── Components ────────────────────────────────────────────────────────────
 export default function ArcadePage() {
     const [currentLevelNum, setCurrentLevelNum] = useState(1);
@@ -26,7 +29,7 @@ export default function ArcadePage() {
     async function fetchNextLevel() {
         setGameState("LOADING");
         try {
-            const res = await fetch("http://127.0.0.1:8000/arcade/generate");
+            const res = await fetch(`${API_BASE_URL}/arcade/generate`);
             const data = await res.json();
             setLevel(data);
             setGameState("PLAYING");
