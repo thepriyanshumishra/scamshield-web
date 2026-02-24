@@ -71,6 +71,7 @@ You MUST reply with ONLY a valid JSON object — no explanation, no markdown, no
   "category": <one of: "bank scam", "job scam", "courier scam", "lottery scam", "phishing", "normal message">,
   "red_flags": [<list of short descriptions of suspicious patterns found, empty if safe>],
   "highlighted_phrases": [<list of objects: {"phrase": "exact verbatim substring from the message", "danger": "high" or "medium"}. Only include phrases that ACTUALLY appear word-for-word in the message. Empty array if safe.>],
+  "psychology_explainer": <One short sentence explaining the core psychological manipulation tactic used by the scammer (e.g., "False Urgency to trigger panic", "Authority Bias to demand compliance", "Greed/FOMO to bypass logic"). If the message is completely safe, state "No psychological manipulation detected.">,
   "advice": <one clear, actionable sentence of safety advice>
 }
 
@@ -171,6 +172,9 @@ def analyse_text(message: str) -> dict:
         # ── Advice ────────────────────────────────────────────────────────
         advice = str(result.get("advice", "Stay cautious and verify the source."))
 
+        # ── Psychology Explainer ──────────────────────────────────────────
+        psychology_explainer = str(result.get("psychology_explainer", "No psychological manipulation detected."))
+
         # ── Calibration: blend model score with red-flag count + category ─
         flag_count   = len(red_flags)
         flag_bonus   = flag_count * 4.0
@@ -189,6 +193,7 @@ def analyse_text(message: str) -> dict:
             "category":            category,
             "red_flags":           red_flags,
             "highlighted_phrases": highlighted_phrases,
+            "psychology_explainer": psychology_explainer,
             "advice":              advice,
         }
 
@@ -213,6 +218,7 @@ def _fallback_result() -> dict:
         "probability": 0.5,
         "category":    "normal message",
         "red_flags":   ["Could not analyse — AI service unavailable"],
+        "psychology_explainer": "Analysis failed.",
         "advice":      "Please try again. If you suspect a scam, do not share personal information.",
     }
 

@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface ScamRecord {
+    tx_hash?: string;
+    block_number?: number;
     hash: string;
     category: string;
     timestamp: number; // Unix timestamp
@@ -12,7 +14,7 @@ interface ScamRecord {
 
 // ── Scam Ledger Page ──────────────────────────────────────────────────────
 /**
- * Shows all scam records stored on the Polygon Amoy blockchain.
+ * Shows all scam records stored on the ScamShield persistent network.
  */
 export default function LedgerPage() {
     const [scams, setScams] = useState<ScamRecord[]>([]);
@@ -22,14 +24,20 @@ export default function LedgerPage() {
     const [selectedScam, setSelectedScam] = useState<ScamRecord | null>(null);
 
     useEffect(() => {
-        fetch("http://127.0.0.1:8000/scams")
-            .then((r) => r.json())
-            .then((data) => {
-                setScams(data.scams ?? []);
-                setTotal(data.total ?? 0);
-            })
-            .catch(() => setError("Cannot reach backend."))
-            .finally(() => setLoading(false));
+        const fetchScams = () => {
+            fetch("http://127.0.0.1:8000/scams")
+                .then((r) => r.json())
+                .then((data) => {
+                    setScams(data.scams ?? []);
+                    setTotal(data.total ?? 0);
+                })
+                .catch(() => setError("Cannot reach backend."))
+                .finally(() => setLoading(false));
+        };
+
+        fetchScams();
+        const interval = setInterval(fetchScams, 5000); // Poll every 5 seconds for live feel
+        return () => clearInterval(interval);
     }, []);
 
     // ── Category badge colour map ──────────────────────────────────────────
@@ -58,9 +66,11 @@ export default function LedgerPage() {
                     ⛓️ Scam Ledger
                 </h1>
                 <p className="text-gray-600 font-medium mb-8">
-                    Every scam flagged by ScamShield is fingerprinted and stored. Transparent. Immutable.
+                    View immutable threat fingerprints safely stored on the ScamShield Network.
+                    <span className="ml-2 inline-flex items-center gap-2 px-2 py-0.5 border-2 border-neo-green text-neo-green font-bold text-xs uppercase bg-green-50 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-neo-green block"></span> Live Feed
+                    </span>
                 </p>
-
                 {/* Stats bar */}
                 <div className="flex gap-4 mb-8 flex-wrap">
                     <div className="neo-card px-6 py-4 flex-1 min-w-[140px]">
@@ -94,31 +104,38 @@ export default function LedgerPage() {
                 )}
 
                 <div className="space-y-3">
-                    {scams.map((scam, idx) => (
-                        <div
-                            key={scam.hash + idx}
-                            onClick={() => setSelectedScam(scam)}
-                            className="neo-card p-4 flex items-center justify-between flex-wrap gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-neo transition-all bg-white"
-                        >
-                            <div className="flex-1 min-w-0">
-                                <p className="font-mono text-sm font-bold truncate">
-                                    {scam.hash.substring(0, 10)}...{scam.hash.slice(-8)}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-0.5 font-bold">
-                                    {new Date(scam.timestamp * 1000).toLocaleString('en-IN', {
-                                        dateStyle: 'medium',
-                                        timeStyle: 'short'
-                                    })}
-                                </p>
-                            </div>
-                            <span
-                                className={`text-xs font-bold px-3 py-1 border-2 border-black ${categoryColor[scam.category] ?? "bg-gray-200 text-black"
-                                    }`}
+                    {scams.map((scam, idx) => {
+                        const dateString = new Date(scam.timestamp * 1000).toLocaleString('en-IN', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short'
+                        });
+
+                        return (
+                            <div
+                                key={scam.hash + idx}
+                                onClick={() => setSelectedScam(scam)}
+                                className="neo-card p-4 flex items-center justify-between flex-wrap gap-3 cursor-pointer hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all bg-white border-2 border-black"
                             >
-                                {scam.category}
-                            </span>
-                        </div>
-                    ))}
+                                {/* Tx Hash & Timestamp */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-mono text-sm font-bold truncate">
+                                        {scam.tx_hash || scam.hash}
+                                    </p>
+                                    <div className="flex gap-4 text-xs font-bold text-gray-500 mt-2">
+                                        <span>📅 {dateString}</span>
+                                        {scam.block_number && (
+                                            <span>🧱 Block: {scam.block_number}</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <span
+                                    className={`text-xs font-bold px-3 py-1 border-2 border-black ${categoryColor[scam.category] ?? "bg-gray-200 text-black"}`}
+                                >
+                                    {scam.category}
+                                </span>
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
 
@@ -138,15 +155,22 @@ export default function LedgerPage() {
 
                         <div className="space-y-4">
                             <div>
-                                <p className="text-xs font-bold uppercase text-gray-500 mb-1">Scam Hash</p>
+                                <p className="text-xs font-bold uppercase text-gray-500 mb-1">Transaction Hash</p>
                                 <div className="bg-gray-100 p-3 border-2 border-black font-mono text-sm break-all relative group">
-                                    {selectedScam.hash}
+                                    {selectedScam.tx_hash || selectedScam.hash}
                                     <button
-                                        onClick={() => navigator.clipboard.writeText(selectedScam.hash)}
+                                        onClick={() => navigator.clipboard.writeText(selectedScam.tx_hash || selectedScam.hash)}
                                         className="absolute right-2 top-2 bg-white border-2 border-black text-xs font-bold px-2 py-1 opacity-0 group-hover:opacity-100 copy-btn hover:bg-black hover:text-white transition-colors"
                                     >
                                         Copy
                                     </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-bold uppercase text-gray-500 mb-1">Original Message Hash</p>
+                                <div className="bg-gray-100 p-3 border-2 border-black font-mono text-xs break-all text-gray-500">
+                                    {selectedScam.hash}
                                 </div>
                             </div>
 
@@ -163,17 +187,6 @@ export default function LedgerPage() {
                                         {new Date(selectedScam.timestamp * 1000).toLocaleString('en-IN')}
                                     </p>
                                 </div>
-                            </div>
-
-                            <div className="pt-4 border-t-2 border-black mt-4">
-                                <a
-                                    href={`https://amoy.polygonscan.com/address/0xa31EdD87F321d76E6c5ad0c5E9294A95E8Fa100f`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="block w-full text-center neobrutal-button-blue shadow-none py-3 text-sm"
-                                >
-                                    View Ledger on PolygonScan ↗
-                                </a>
                             </div>
                         </div>
                     </div>

@@ -105,9 +105,15 @@ export default function ArcadePage() {
                         </p>
 
                         <div className="bg-neo-red text-white p-6 border-4 border-black font-bold mb-8 shadow-neo-sm relative overflow-hidden">
-                            <h3 className="text-2xl font-black mb-2">You got scammed!</h3>
+                            <h3 className="text-2xl font-black mb-2">
+                                {level?.isScam && userGuessedScam === false
+                                    ? "You got scammed!"
+                                    : "You were too paranoid!"}
+                            </h3>
                             <p className="text-sm font-medium">
-                                Human intuition fails eventually. The Groq AI engine caught what you missed.
+                                {level?.isScam && userGuessedScam === false
+                                    ? "Human intuition fails eventually. The Groq AI engine caught what you missed."
+                                    : "This was a perfectly safe message, but you panicked. The Groq AI engine knew better."}
                             </p>
                         </div>
 

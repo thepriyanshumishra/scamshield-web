@@ -1,0 +1,37 @@
+Running node v18.20.4 (npm v10.7.0)
+
+WARNING: You are using Node.js 18.20.4 which is not supported by Hardhat.
+Please upgrade to 22.10.0 or a later LTS version (even major version number)
+
+An unexpected error occurred:
+
+Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/config.js from /Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js not supported.
+Instead change the require of config.js in /Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js to a dynamic import() which is available in all CommonJS modules.
+    at Object.<anonymous> (/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js:3:18)
+    at Object.<anonymous> (/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-chai-matchers/index.js:3:1)
+    at Object.<anonymous> (/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-toolbox/index.js:3:1)
+    at async importConfigFileWithTsxFallback (file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/internal/config-loading.js:107:20)
+    at async importUserConfig (file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/internal/config-loading.js:61:22)
+    at async main (file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/internal/cli/main.js:60:28)
+    at async file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/cli.js:21:1 {
+  code: 'ERR_REQUIRE_ESM'
+}
+
+If you think this is a bug in Hardhat, please report it here: https://hardhat.org/report-bug
+/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js:3
+const config_1 = require("hardhat/config");
+                 ^
+
+Error [ERR_REQUIRE_ESM]: require() of ES Module /Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/config.js from /Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js not supported.
+Instead change the require of config.js in /Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js to a dynamic import() which is available in all CommonJS modules.
+    at Object.<anonymous> (/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-ethers/internal/index.js:3:18)
+    at Object.<anonymous> (/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-chai-matchers/index.js:3:1)
+    at Object.<anonymous> (/Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/@nomicfoundation/hardhat-toolbox/index.js:3:1)
+    at async importConfigFileWithTsxFallback (file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/internal/config-loading.js:107:20)
+    at async importUserConfig (file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/internal/config-loading.js:61:22)
+    at async main (file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/internal/cli/main.js:60:28)
+    at async file:///Users/thedarkpcm/Desktop/Priyanshu/ScamShield/blockchain/node_modules/hardhat/dist/src/cli.js:21:1 {
+  code: 'ERR_REQUIRE_ESM'
+}
+
+Node.js v18.20.4

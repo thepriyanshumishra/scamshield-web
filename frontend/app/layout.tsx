@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import LiveThreatToast from "@/components/LiveThreatToast";
+import GlobalStatsBanner from "@/components/GlobalStatsBanner";
+import Footer from "@/components/Footer";
 
 // ── Fonts ────────────────────────────────────────────────────────────────
 const spaceGrotesk = Space_Grotesk({
@@ -38,10 +40,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${spaceGrotesk.variable} ${spaceMono.variable} font-sans antialiased bg-white text-black min-h-screen`}
+        className={`${spaceGrotesk.variable} ${spaceMono.variable} font-sans antialiased bg-white text-black min-h-screen flex flex-col`}
       >
-        {children}
+        <GlobalStatsBanner />
+        <main className="flex-1">
+          {children}
+        </main>
         <LiveThreatToast />
+        <Footer />
       </body>
     </html>
   );

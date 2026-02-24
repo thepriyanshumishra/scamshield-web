@@ -1,7 +1,10 @@
 "use client";
 
 import Navbar from "@/components/Navbar";
+import HowItWorks from "@/components/HowItWorks";
+import LocalHistory from "@/components/LocalHistory";
 import { useState } from "react";
+import jsQR from "jsqr";
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface HighlightedPhrase {
@@ -14,6 +17,7 @@ interface AnalysisResult {
   category: string;
   red_flags: string[];
   highlighted_phrases?: HighlightedPhrase[];
+  psychology_explainer?: string;
   advice: string;
   extracted_text?: string;
 }
@@ -33,10 +37,34 @@ export default function Home() {
     setImageFile(file);
     setMessage("");
     setResult(null);
+    setError("");
+
     // Create a local URL for the thumbnail preview
     if (file) {
       const url = URL.createObjectURL(file);
       setImagePreview(url);
+
+      // Attempt QR extraction
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0, img.width, img.height);
+          const imageData = ctx.getImageData(0, 0, img.width, img.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height);
+          if (code && code.data) {
+            console.log("QR Code detected:", code.data);
+            // It's a QR code! Swap to text extraction mode
+            setMessage(code.data);
+            setImageFile(null); // We don't need to send the image to backend OCR anymore
+            setError("QR Code detected and text extracted automatically.");
+          }
+        }
+      };
+      img.src = url;
     } else {
       setImagePreview(null);
     }
@@ -59,25 +87,89 @@ export default function Home() {
     }
 
     setLoading(true);
+    let finalResult = null;
+
+    let res: Response;
     try {
       if (imageFile) {
         const formData = new FormData();
         formData.append("file", imageFile);
-        const res = await fetch("http://127.0.0.1:8000/analyze-image", {
+        res = await fetch("http://127.0.0.1:8000/analyze-image", {
           method: "POST",
           body: formData,
         });
-        setResult(await res.json());
       } else {
-        const res = await fetch("http://127.0.0.1:8000/analyze-text", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message }),
-        });
-        setResult(await res.json());
+        // Check if message is a URL
+        const isUrl = /^(https?:\/\/)/i.test(message.trim());
+
+        if (isUrl) {
+          res = await fetch("http://127.0.0.1:8000/analyze-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: message.trim() }),
+          });
+        } else {
+          res = await fetch("http://127.0.0.1:8000/analyze-text", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message }),
+          });
+        }
       }
-    } catch {
-      setError("Cannot reach backend. Make sure FastAPI is running on port 8000.");
+
+      finalResult = await res.json();
+      if (!res.ok) {
+        const errorMsg = finalResult.detail
+          ? (typeof finalResult.detail === 'string' ? finalResult.detail : JSON.stringify(finalResult.detail))
+          : "Unknown error from server";
+        throw new Error(errorMsg);
+      }
+
+      // ── Defensive checks ──
+      if (!finalResult.red_flags) finalResult.red_flags = [];
+      if (!finalResult.highlighted_phrases) finalResult.highlighted_phrases = [];
+
+      // ── WHATSAPP FORWARD DETECTOR ──
+      // If the user pasted a message starting with WhatsApp's notorious "Forwarded" tag,
+      // we immediately flag it, even if the AI missed it.
+      if (message) {
+        const lowerMsg = message.trim().toLowerCase();
+        if (lowerMsg.startsWith("forwarded") || lowerMsg.includes("forwarded many times")) {
+          if (!finalResult.red_flags.includes("Mass-forwarded message pattern detected")) {
+            finalResult.red_flags.unshift("Mass-forwarded WhatsApp pattern detected");
+            // Bump probability slightly if it's a forward
+            finalResult.probability = Math.min(finalResult.probability + 0.15, 0.99);
+          }
+        }
+      }
+
+      setResult(finalResult);
+
+      // ── SAVE TO LOCAL HISTORY ──
+      try {
+        const historyStr = localStorage.getItem("scamshield_history");
+        let history = historyStr ? JSON.parse(historyStr) : [];
+        history.unshift({
+          timestamp: new Date().toISOString(),
+          message: message || imageFile?.name || "Image upload",
+          category: finalResult.category,
+          probability: finalResult.probability,
+        });
+        // Keep only last 5
+        history = history.slice(0, 5);
+        localStorage.setItem("scamshield_history", JSON.stringify(history));
+        // dispatch custom event so other components can re-render
+        window.dispatchEvent(new Event("historyUpdated"));
+      } catch (e) {
+        console.error("Local storage error", e);
+      }
+
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message !== "Failed to fetch") {
+        setError("Error: " + err.message);
+      } else {
+        setError("Cannot reach backend. Make sure FastAPI is running on port 8000.");
+      }
     } finally {
       setLoading(false);
     }
@@ -146,11 +238,11 @@ export default function Home() {
       <section className="max-w-3xl mx-auto px-6 pb-10 space-y-4">
         {/* Message textarea */}
         <div>
-          <label className="block font-bold mb-1 text-sm">Paste suspicious message</label>
+          <label className="block font-bold mb-1 text-sm">Paste suspicious message or URL</label>
           <textarea
             id="message-input"
             rows={5}
-            placeholder="e.g. Congratulations! Your bank account has been selected for a ₹50,000 reward. Share your OTP to claim..."
+            placeholder="e.g. Congratulations! Your bank account has... OR https://suspicious-website.com"
             value={message}
             onChange={handleMessageChange}
             className="w-full p-4 font-mono text-sm border-2 border-black shadow-neo hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all focus:outline-none focus:-translate-y-1 focus:shadow-[6px_6px_0px_rgba(0,0,0,1)] resize-none"
@@ -207,11 +299,18 @@ export default function Home() {
       </section>
 
       {/* ── Result card ── */}
-      {result && (
+      {result ? (
         <section className="max-w-3xl mx-auto px-6 pb-16 animate-in slide-in-from-bottom-8 fade-in duration-500">
           <ResultCard result={result} onStore={handleStoreOnBlockchain} originalMessage={message} />
         </section>
+      ) : (
+        <HowItWorks />
       )}
+
+      {/* ── Local History ── */}
+      <section className="max-w-3xl mx-auto px-6 pb-16">
+        <LocalHistory />
+      </section>
     </main>
   );
 }
@@ -366,6 +465,16 @@ function ResultCard({
           </div>
         )}
 
+        {/* ── The Attacker's Mirror (Psychology) ── */}
+        {isScam && result.psychology_explainer && !result.psychology_explainer.toLowerCase().includes("no psychological manipulation") && (
+          <div className="bg-black text-white border-4 border-black p-5 shadow-[6px_6px_0px_rgba(255,222,89,1)]">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-2 text-neo-yellow">🧠 The Attacker's Mirror</p>
+            <p className="text-base font-bold leading-snug font-mono text-gray-200">
+              {result.psychology_explainer}
+            </p>
+          </div>
+        )}
+
         {/* ── Safety Advice ── */}
         <div className="bg-neo-yellow border-4 border-black p-5 shadow-[6px_6px_0px_rgba(0,0,0,1)]">
           <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-2">🛡️ Safety Advice</p>
@@ -379,7 +488,7 @@ function ResultCard({
               onClick={() => setShowOcrText((v) => !v)}
               className="w-full flex items-center justify-between px-4 py-3 font-bold text-sm bg-gray-50 hover:bg-neo-yellow transition-colors"
             >
-              <span>📝 Text extracted from image</span>
+              <span>{/^(https?:\/\/)/i.test((originalMessage || "").trim()) ? "📝 Scraped Web Content" : "📝 Text extracted from image"}</span>
               <span>{showOcrText ? "▲ Hide" : "▼ Show"}</span>
             </button>
             {showOcrText && (
@@ -391,23 +500,61 @@ function ResultCard({
         )}
 
         {/* ── CTA Buttons ── */}
-        {isScam && (
-          <div className="flex gap-4 flex-col sm:flex-row pt-2 border-t-4 border-black">
+        <div className="flex gap-4 flex-col sm:flex-row pt-4 border-t-4 border-black">
+          {/* Share/Copy utilities (available for both safe & scam) */}
+          <div className="flex flex-1 gap-2">
             <button
-              id="store-blockchain-button"
-              onClick={onStore}
-              className="bg-neo-red text-white border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-sm uppercase tracking-widest"
+              onClick={() => {
+                const text = `ScamShield detected a ${isScam ? 'High Risk Scam' : 'Safe Message'}!\nCategory: ${result.category}\nScore: ${pct}%\nAdvice: ${result.advice}`;
+                if (navigator.share) {
+                  navigator.share({ title: 'ScamShield Analysis', text });
+                } else {
+                  navigator.clipboard.writeText(text);
+                  alert("✅ Result copied to clipboard!");
+                }
+              }}
+              className="bg-gray-100 text-black border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-xs lg:text-sm uppercase tracking-widest text-center"
             >
-              ⛓️ Add to Blockchain Ledger
+              📤 Share
             </button>
             <button
-              onClick={() => window.print()}
-              className="bg-white text-black border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-sm uppercase tracking-widest"
+              onClick={() => {
+                navigator.clipboard.writeText(displayText);
+                alert("✅ Original message copied!");
+              }}
+              className="bg-gray-100 text-black border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-xs lg:text-sm uppercase tracking-widest text-center"
             >
-              📄 Download Police Report
+              📋 Copy Raw
             </button>
           </div>
-        )}
+
+          {/* Scam-specific utilities */}
+          {isScam && (
+            <div className="flex flex-1 gap-2">
+              <button
+                id="store-blockchain-button"
+                onClick={onStore}
+                className="bg-[#FFDE59] text-black border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-xs lg:text-sm uppercase tracking-widest"
+              >
+                ⛓️ Add to Ledger
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="bg-white text-black border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-xs lg:text-sm uppercase tracking-widest"
+              >
+                🖨️ Print Report
+              </button>
+              <a
+                href="https://cybercrime.gov.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center bg-neo-red text-white border-4 border-black font-black py-4 flex-1 shadow-[6px_6px_0px_rgba(0,0,0,1)] hover:-translate-y-1 hover:shadow-[8px_8px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all text-xs lg:text-sm uppercase tracking-widest"
+              >
+                🚨 Report Crime
+              </a>
+            </div>
+          )}
+        </div>
 
         {/* ── Print-only Police Report ── */}
         {isScam && (

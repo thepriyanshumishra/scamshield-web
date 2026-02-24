@@ -1,0 +1,11 @@
+INFO:     Started server process [35324]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+🌍 Tesseract OCR: 124 language packs loaded → afr+amh+ara+asm+aze+aze_cyrl+bel+ben+bod+bos+bre+bul+cat+ceb+ces+chi_sim+chi_sim…
+✅ Groq API key loaded.
+✅ Scam stored | block=5200000 | tx=0xbd72d68f2fe54a8d...
+INFO:     127.0.0.1:64623 - "POST /store-scam HTTP/1.1" 200 OK
+✅ Scam stored | block=5200006 | tx=0x3fa829234b85a075...
+INFO:     127.0.0.1:64635 - "POST /store-scam HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64637 - "GET /scams HTTP/1.1" 200 OK

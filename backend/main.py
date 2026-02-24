@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from blockchain_service import add_scam_to_ledger, get_all_scams
 from groq_service import analyse_text, generate_arcade_level
+from scraper_service import fetch_text_from_url
 import random
 
 # ── Load environment variables from .env ───────────────────────────────────
@@ -51,6 +52,10 @@ class TextRequest(BaseModel):
     message: str
 
 
+class UrlRequest(BaseModel):
+    url: str
+
+
 class HighlightedPhrase(BaseModel):
     phrase: str
     danger: str  # "high" or "medium"
@@ -61,6 +66,7 @@ class AnalysisResult(BaseModel):
     category: str                                   # e.g. "bank scam"
     red_flags: list[str]
     highlighted_phrases: list[HighlightedPhrase] = []  # verbatim dangerous substrings
+    psychology_explainer: str = ""                  # psychological manipulation breakdown
     advice: str
     extracted_text: str = ""                        # OCR text from image
 
@@ -148,6 +154,28 @@ async def analyze_text_endpoint(body: TextRequest):
     """
     result = analyse_text(body.message)
     return result
+
+
+@app.post("/analyze-url", response_model=AnalysisResult)
+async def analyze_url_endpoint(body: UrlRequest):
+    """
+    Scrape text from a public URL and analyze it for scam indicators,
+    such as fake login pages, fraudulent shops, or investment schemes.
+
+    Input : { "url": "https://..." }
+    Output: { probability, category, red_flags[], advice, extracted_text }
+    """
+    try:
+        scraped_text = fetch_text_from_url(body.url)
+        if not scraped_text.strip():
+            raise Exception("No readable text found at this URL.")
+            
+        result = analyse_text(scraped_text)
+        result["extracted_text"] = scraped_text[:1000] + ("..." if len(scraped_text) > 1000 else "")
+        return result
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.post("/analyze-image", response_model=AnalysisResult)
