@@ -41,3 +41,10 @@ build/
 
 # ── ML model weights (too large for git — 268 MB) ─────────────────────────
 backend/scamshield-distilbert/model.safetensors
+
+# ── ML training data (privacy — never push to GitHub) ─────────────────────
+backend/ml_data/training_data.db
+backend/ml_data/training_data.db-shm
+backend/ml_data/training_data.db-wal
+backend/ml_data/*.jsonl
+backend/ml_data/exports/

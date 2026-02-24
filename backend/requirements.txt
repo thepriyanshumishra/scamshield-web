@@ -1,4 +1,4 @@
-fastapi
+SEfastapi
 uvicorn[standard]
 groq
 pytesseract
@@ -8,3 +8,5 @@ python-dotenv
 transformers>=4.38.0,<5
 torch
 numpy<2
+beautifulsoup4
+requests

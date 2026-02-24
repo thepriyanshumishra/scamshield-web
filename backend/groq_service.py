@@ -310,3 +310,55 @@ def generate_arcade_level(force_scam: bool) -> dict:
             "isScam": False,
             "explanation": "The backend AI service is currently unavailable."
         }
+
+
+# ── Second Review (for data flywheel feedback) ───────────────────────────────
+
+_SECOND_REVIEW_PROMPT = """You are ScamShield AI performing a CRITICAL second review.
+
+A user has flagged that our original prediction may be incorrect. Re-evaluate the message very carefully.
+
+Return ONLY a JSON object with a single field:
+{
+  "final_label": <"scam" | "safe" | "uncertain">
+}
+
+Be extra careful. If the user provided a reason, weigh it seriously.
+Do NOT include any explanation or markdown — ONLY the JSON object."""
+
+
+def second_review(message: str, user_reason: str = "") -> str:
+    """
+    Re-evaluate a message after a user disagrees with the original verdict.
+
+    Called by the POST /feedback endpoint when feedback == "disagree".
+    Returns a corrected label: "scam" | "safe" | "uncertain"
+    """
+    client = _get_client()
+
+    user_content = f"Message to re-evaluate:\n\n{message}"
+    if user_reason.strip():
+        user_content += f"\n\nUser's reason for disagreement: {user_reason.strip()}"
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": _SECOND_REVIEW_PROMPT},
+                {"role": "user",   "content": user_content},
+            ],
+            temperature=0.1,
+            max_tokens=60,
+        )
+        raw = response.choices[0].message.content.strip()
+        json_match = re.search(r"\{.*\}", raw, re.DOTALL)
+        if json_match:
+            result = json.loads(json_match.group(0))
+            label = str(result.get("final_label", "uncertain")).lower().strip()
+            if label in ("scam", "safe", "uncertain"):
+                return label
+    except Exception as e:
+        print(f"⚠️  second_review Groq error: {e}")
+
+    return "uncertain"
+
