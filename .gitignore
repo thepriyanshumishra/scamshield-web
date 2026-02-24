@@ -38,3 +38,6 @@ Thumbs.db
 # ── Build artifacts ───────────────────────────────────────────────────────
 dist/
 build/
+
+# ── ML model weights (too large for git — 268 MB) ─────────────────────────
+backend/scamshield-distilbert/model.safetensors

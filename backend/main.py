@@ -19,13 +19,14 @@ from pydantic import BaseModel
 from blockchain_service import add_scam_to_ledger, get_all_scams
 from groq_service import analyse_text, generate_arcade_level
 from scraper_service import fetch_text_from_url
+import ml_service
 import random
 
 # ── Load environment variables from .env ───────────────────────────────────
 load_dotenv()
 
 # ── App setup ──────────────────────────────────────────────────────────────
-app = FastAPI(title="ScamShield API", version="0.2.0")
+app = FastAPI(title="ScamShield API", version="0.3.0")
 
 # Allow frontend (localhost:3000) to call this API during development
 app.add_middleware(
@@ -45,6 +46,8 @@ async def startup():
         print("⚠️  WARNING: GROQ_API_KEY not set. Copy backend/.env.example → .env and add your key.")
     else:
         print("✅ Groq API key loaded.")
+    # Load local DistilBERT model
+    ml_service.load_model()
 
 
 # ── Request / Response models ───────────────────────────────────────────────
@@ -69,6 +72,14 @@ class AnalysisResult(BaseModel):
     psychology_explainer: str = ""                  # psychological manipulation breakdown
     advice: str
     extracted_text: str = ""                        # OCR text from image
+    ml_score: float | None = None                   # local DistilBERT scam score (0.0–1.0)
+
+
+class MLAnalysisResult(BaseModel):
+    ml_score: float        # scam probability 0.0–1.0
+    label: str             # "SCAM" or "SAFE"
+    confidence: float      # probability of the winning label
+    model_available: bool  # False if model not loaded
 
 
 class StoreRequest(BaseModel):
@@ -147,13 +158,62 @@ def _extract_text_from_image(image_bytes: bytes) -> str:
 @app.post("/analyze-text", response_model=AnalysisResult)
 async def analyze_text_endpoint(body: TextRequest):
     """
-    Analyze a text message for scam indicators using Groq LLM.
+    Analyze a text message for scam indicators.
+
+    Uses Groq LLM for rich analysis (category, flags, advice) and blends
+    in the local DistilBERT score for a more accurate final probability.
 
     Input : { "message": "..." }
-    Output: { probability, category, red_flags[], advice }
+    Output: { probability, category, red_flags[], advice, ml_score }
     """
     result = analyse_text(body.message)
+
+    # Blend in local ML score if available
+    ml_score = ml_service.classify_text(body.message)
+    if ml_score is not None:
+        groq_prob = result["probability"]   # already 0.0–1.0
+        blended = round(0.60 * groq_prob + 0.40 * ml_score, 4)
+        result["probability"] = blended
+        result["ml_score"] = ml_score
+
     return result
+
+
+@app.post("/analyze-ml", response_model=MLAnalysisResult)
+async def analyze_ml_endpoint(body: TextRequest):
+    """
+    Fast local scam classification using the fine-tuned DistilBERT model.
+    No external API call — runs entirely on-device in ~50ms.
+
+    Input : { "message": "..." }
+    Output: { ml_score, label, confidence, model_available }
+    """
+    if not ml_service.is_available():
+        return MLAnalysisResult(
+            ml_score=0.5,
+            label="UNKNOWN",
+            confidence=0.5,
+            model_available=False,
+        )
+
+    ml_score = ml_service.classify_text(body.message)
+    if ml_score is None:
+        return MLAnalysisResult(
+            ml_score=0.5,
+            label="UNKNOWN",
+            confidence=0.5,
+            model_available=True,
+        )
+
+    label = "SCAM" if ml_score >= 0.5 else "SAFE"
+    confidence = ml_score if label == "SCAM" else (1.0 - ml_score)
+
+    return MLAnalysisResult(
+        ml_score=round(ml_score, 4),
+        label=label,
+        confidence=round(confidence, 4),
+        model_available=True,
+    )
 
 
 @app.post("/analyze-url", response_model=AnalysisResult)
@@ -249,4 +309,9 @@ async def get_arcade_level():
 # ── Health check ────────────────────────────────────────────────────────────
 @app.get("/")
 async def root():
-    return {"status": "ok", "service": "ScamShield API", "version": "0.2.0"}
+    return {
+        "status": "ok",
+        "service": "ScamShield API",
+        "version": "0.3.0",
+        "ml_model_loaded": ml_service.is_available(),
+    }
