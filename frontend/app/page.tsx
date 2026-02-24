@@ -369,7 +369,8 @@ function ResultCard({
 }) {
   const pct = Math.round(result.probability * 100);
   const isScam = pct >= 50;
-  const [showOcrText, setShowOcrText] = useState(false);
+  const isUrlScan = /^https?:\/\//i.test((originalMessage || "").trim());
+  const [showOcrText, setShowOcrText] = useState(!!result.extracted_text && isUrlScan);
 
   // ── Feedback state ──
   const [feedbackGiven, setFeedbackGiven] = useState<'agree' | 'disagree' | null>(null);
@@ -575,14 +576,14 @@ function ResultCard({
             )}
           </div>
 
-          {/* ── OCR accordion ── */}
-          {result.extracted_text && !result.extracted_text.startsWith("[") && (
+          {/* ── Scraped / OCR content accordion ── */}
+          {result.extracted_text && (
             <div className="border-2 border-black">
               <button
                 onClick={() => setShowOcrText((v) => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 font-bold text-sm bg-gray-50 hover:bg-neo-yellow transition-colors"
               >
-                <span>{/^(https?:\/\/)/i.test((originalMessage || "").trim()) ? "📝 Scraped Web Content" : "📝 Text extracted from image"}</span>
+                <span>{isUrlScan ? "📝 Scraped Web Content" : "📝 Text extracted from image"}</span>
                 <span>{showOcrText ? "▲ Hide" : "▼ Show"}</span>
               </button>
               {showOcrText && (

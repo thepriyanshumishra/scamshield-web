@@ -8,9 +8,13 @@ This document is the **most complete, up-to-date, and accurate breakdown** of th
 
 ## 1️⃣ Repository Overview
 
-ScamShield is an AI-powered scam analysis tool with a mocked Web3 ledger. It has two main parts:
-1. **Frontend (/frontend):** Built with Next.js (App Router), React, and Tailwind CSS. It features a striking Neobrutalist design (high contrast, thick black borders, bold colors).
-2. **Backend (/backend):** Built with Python FastAPI. It performs LLM-based scam analysis via the **Groq API** (`llama-3.1-8b-instant`), executes OCR for images via **Tesseract**, scrapes URL text using `BeautifulSoup`, and manages the simulated blockchain ledger in SQLite.
+ScamShield is a hybrid AI-powered scam defense ecosystem. It has two main parts:
+1. **Frontend (/frontend):** Built with Next.js 14, React, and Tailwind CSS. It features a striking Neobrutalist design (high contrast, bold colors).
+2. **Backend (/backend):** Built with Python FastAPI. It performs **Dual-Engine Analysis**:
+    - **Local Intelligence:** A fine-tuned **DistilBERT** model (running locally on CPU) for high-speed pattern recognition.
+    - **Global Intelligence:** **Groq Llama 3** for deep semantic reasoning and psychological breakdown.
+    - **Flywheel:** An automated data collection pipeline that captures every scan into a training database for continuous model improvement.
+    - **Mock Ledger:** A simulated blockchain stored in SQLite to provide immutable-style public transparency.
 
 ---
 
@@ -75,28 +79,24 @@ These files exist at the very top level of the repository.
 ## 4️⃣ BACKEND — FILE BY FILE
 *Path: `/backend`*
 
-### API & Config
-*   **`requirements.txt`**: Python dependencies (`fastapi`, `uvicorn`, `groq`, `pytesseract`, `beautifulsoup4`, `requests`, `python-dotenv`).
-*   **`main.py` (The Core API Entrypoint)**
-    *   **Why it exists:** It is the FastAPI server.
-    *   **What it does:** Defines all API routes.
-    *   **Key Endpoints:**
-        *   `POST /analyze-text`: Accepts text, sends to `groq_service.py`.
-        *   `POST /analyze-url`: Calls `scraper_service.py` to extract text, then sends to Groq.
-        *   `POST /analyze-image`: Receives image, runs Tesseract OCR (`pytesseract.image_to_string`), sends text to Groq.
-        *   `POST /store-scam`: Stores the deterministic message hash to the `blockchain_service`.
-        *   `GET /scams`: Retrieves the full ledger history.
-        *   `GET /arcade/generate`: Calls Groq to invent a new message.
-*   **`scraper_service.py`**
-    *   **What it does:** Takes a URL, uses `requests` to fetch HTML, and `BeautifulSoup` to strip scripts/styles and extract flat text (max 5000 chars) for LLM analysis.
-*   **`groq_service.py`**
-    *   **What it does:** Handles all AI logic.
-    *   **Key functions:** `analyse_text()` injects the suspicious message into a strict JSON-enforcing `SYSTEM_PROMPT`. Uses `llama-3.1-8b-instant` to score probability, identify categories, quote highlighted phrases, and explain psychological tactics. It also calibrates the raw LLM score using weighted risk logic. `generate_arcade_level()` uses `llama-3.3-70b-versatile` to dynamically create game scenarios.
+### AI & Data Services
+*   **`ml_service.py` (Local AI)**
+    -   **Why it exists:** Provides fast, local classification without API costs.
+    -   **What it does:** Loads the fine-tuned `scamshield-distilbert` weights using the Hugging Face `transformers` library. It converts text into a scam probability score (0.0 - 1.0) in under 50ms.
+*   **`groq_service.py` (Cloud AI)**
+    -   **What it does:** Handles complex reasoning. It generates red flags, advice, and the "Attacker's Mirror" psychology explainer. It also includes a `second_review()` function that re-evaluates messages if a user disagrees with the initial result.
+*   **`ml_data/` (The Flywheel Engine)**
+    -   **`ml_data_service.py`**: Manages `training_data.db`. Auto-creates the schema and saves every raw analysis result as a background task. 
+    -   **`dataset_export.py`**: A CLI tool that exports the collected data into `.jsonl` formats ready for Hugging Face/OpenAI fine-tuning.
+*   **`main.py` (The API Orchestrator)**
+    -   **What it does:** Wires everything together. Bumps the version to `v0.4.0`.
+    -   **Logic:** In `/analyze-text`, it calls both DistilBERT and Groq, blending their scores (40% ML / 60% LLM) for a more robust final verdict. It then kicks off a **Background Task** to save the evidence for the flywheel.
+
+### Web3 & Scraping
 *   **`blockchain_service.py` (The Mock Ledger)**
-    *   **Why it exists:** Web3 fallback.
-    *   **What it does:** Stores data in a local SQLite file (`scam_ledger.db`).
-    *   **Key functions:** `_make_tx_hash()` artificially generates an Ethereum-like transaction hash using a random nonce. `_next_block_number()` incrementally adds to a realistic Amoy block number base (`~5.2M`). `add_scam_to_ledger()` writes the transaction row. `get_all_scams()` reads it back.
-*   **`scam_ledger.db`**: The automatically generated local database holding the mock blockchain data.
+    -   **What it does:** Mimics a transparent ledger using a local SQLite file (`scam_ledger.db`). It generates deterministic `0x...` hashes and increments fake block numbers to provide a realistic experience of public auditability.
+*   **`scraper_service.py`**
+    -   **What it does:** Uses `BeautifulSoup` to strip HTML clutter and extract pure text for AI analysis.
 
 ---
 
@@ -121,16 +121,27 @@ Currently, ScamShield operates a **Simulated Ledger via SQLite**.
 
 ---
 
-## 7️⃣ END-TO-END EXECUTION FLOW
+## 7️⃣ THE AI DATA FLYWHEEL (SELF-IMPROVEMENT)
 
-**Scenario: User pastes a message & clicks "Analyze"**
-1.  **Frontend Input:** User pastes text on `app/page.tsx`.
-2.  **API Call:** React hits `/analyze-text` on the FastAPI backend.
-3.  **AI Analysis:** `main.py` passes the text to `groq_service.py`. The system builds a prompt and asks Groq (`llama-3.1-8b-instant`) to return a strict JSON payload containing probability, category, psychology explainer, and red flags.
-4.  **Backend Calculation:** The backend calibrates the AI probability using manual rule weights and replies to the frontend with JSON.
-5.  **Frontend Render:** The UI displays a Threat Score meter, extracts highlighted substrings using Regex, and renders the "Attacker's Mirror" psychology explainer.
-6.  **Ledger Storage (Manual Trigger):** If the user clicks **"Add to Ledger"**:
-    *   The frontend normalizes and hashes the text (SHA-256).
-    *   Passes it to `/store-scam`.
-    *   Backend `blockchain_service.py` generates an Ethereum-style `0x...` transaction hash and saves it into `scam_ledger.db`.
-7.  **Dashboard Update:** Navigating to the Trends or Ledger pages polls `/scams`, hitting the SQLite DB, instantly mapping the new threat onto the dashboard charts and tables.
+This is ScamShield’s competitive advantage. Every scan makes the system smarter.
+
+1.  **Prediction:** A user scans a message.
+2.  **Collection:** The backend saves the raw text, the AI's logic, and the score into `training_data.db`.
+3.  **Human Feedback:** The user can click **👍 Looks Correct** or **👎 I Disagree** on the Result Card.
+4.  **Verification:** If the user disagrees, the system automatically triggers a **Groq Second-Review**. Llama 3 re-evaluates the case carefully.
+5.  **Ground Truth:** If Groq corrects its mistake, the `final_label` in the database is updated.
+6.  **Retraining:** Developers run `dataset_export.py` to get a high-quality, human-verified dataset to fine-tune a new version of the local DistilBERT model.
+
+---
+
+## 8️⃣ END-TO-END EXECUTION FLOW
+
+**Scenario: User uploads a screenshot of a "Bank Blocked" SMS**
+1.  **OCR Extraction:** Frontend sends image to `/analyze-image`. Backend uses Tesseract to extract the text.
+2.  **Dual-Analysis:** 
+    - **ML:** `ml_service` gets a 0.98 score from DistilBERT ("Highly likely scam pattern").
+    - **LLM:** `groq_service` reads the text, spots the fake URL and urgency, and confirms "Scam" with reasoning.
+3.  **Blending:** `main.py` merges these results (Weighted average).
+4.  **Background Save:** While the user sees the result, a background task saves the evidence to the Data Flywheel DB for future training.
+5.  **User Review:** The user clicks "Add to Ledger" to put the hash on the blockchain mock, and "👍 Looks Correct" to verify the AI's reasoning.
+6.  **Global Update:** The Trends dashboard instantly reflects the new scan in the "Live Threat Radar".
