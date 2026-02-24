@@ -514,7 +514,7 @@ function ResultCard({
           {/* ── The Attacker's Mirror (Psychology) ── */}
           {isScam && result.psychology_explainer && !result.psychology_explainer.toLowerCase().includes("no psychological manipulation") && (
             <div className="bg-black text-white border-4 border-black p-5 shadow-[6px_6px_0px_rgba(255,222,89,1)]">
-              <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-2 text-neo-yellow">🧠 The Attacker's Mirror</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] mb-2 text-neo-yellow">🧠 The Attacker&apos;s Mirror</p>
               <p className="text-base font-bold leading-snug font-mono text-gray-200">
                 {result.psychology_explainer}
               </p>
