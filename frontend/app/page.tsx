@@ -33,6 +33,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isDragging, setIsDragging] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // ── Handlers ──────────────────────────────────────────────────────────
   function processImageFile(file: File | null) {
@@ -72,9 +73,7 @@ export default function Home() {
     }
   }
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    processImageFile(e.target.files?.[0] ?? null);
-  }
+
 
   function handleMessageChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setMessage(e.target.value);
@@ -227,24 +226,68 @@ export default function Home() {
         backgroundImage: "radial-gradient(#e5e7eb 1.5px, transparent 1.5px)",
         backgroundSize: "30px 30px"
       }}
-      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-      onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
-      onDrop={(e) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const file = e.dataTransfer.files?.[0];
-        if (file && file.type.startsWith("image/")) {
-          processImageFile(file);
-        }
-      }}
+      onDragOver={(e) => { e.preventDefault(); setShowUploadModal(true); setIsDragging(true); }}
     >
-      {/* ── Drag Overlay ── */}
-      {isDragging && (
-        <div className="absolute inset-0 z-50 bg-neo-yellow/90 backdrop-blur-sm border-8 border-black flex items-center justify-center pointer-events-none">
-          <div className="text-center">
-            <div className="text-8xl mb-4">📥</div>
-            <h2 className="text-5xl font-black uppercase tracking-tighter shadow-black drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">Drop Image Here</h2>
-            <p className="text-xl font-bold mt-2 border-black">Release to analyze instantly</p>
+      {/* ── Upload Modal Overlay ── */}
+      {showUploadModal && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 transition-all"
+          onClick={() => { setShowUploadModal(false); setIsDragging(false); }}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setIsDragging(false);
+            setShowUploadModal(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file && file.type.startsWith("image/")) {
+              processImageFile(file);
+            }
+          }}
+        >
+          <div
+            className="bg-white border-4 border-black shadow-[8px_8px_0px_rgba(0,0,0,1)] w-full max-w-xl flex flex-col p-8 relative animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => { setShowUploadModal(false); setIsDragging(false); }}
+              className="absolute top-4 right-4 w-8 h-8 flex flex-col justify-center items-center border-2 border-black bg-white hover:bg-neo-red hover:text-white transition-colors font-black text-xl leading-none"
+            >
+              &times;
+            </button>
+
+            <h2 className="text-3xl font-black mb-2 tracking-tighter text-black">Upload an image</h2>
+            <p className="font-bold text-sm text-gray-600 mb-6">For best results, upload clear images in JPG, PNG, WEBP, or AVIF formats.</p>
+
+            <div className={`w-full border-4 border-dashed border-black ${isDragging ? "bg-neo-yellow/30" : "bg-gray-50"} p-12 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group relative mb-6`}>
+              <input
+                type="file"
+                accept="image/*, .avif, .webp, .heic, .heif"
+                onChange={(e) => {
+                  processImageFile(e.target.files?.[0] ?? null);
+                  setShowUploadModal(false);
+                  setIsDragging(false);
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="w-16 h-16 bg-white border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,1)] flex items-center justify-center text-2xl mb-4 group-hover:-translate-y-1 group-hover:shadow-[6px_6px_0px_rgba(0,0,0,1)] transition-all">
+                🖼️
+              </div>
+              <p className="font-black text-lg mb-1">{isDragging ? "Release your mouse to drop!" : "Drag and drop images to upload"}</p>
+              <p className="font-bold text-gray-500 text-xs mb-4">Your image will be analyzed instantly.</p>
+              <button className="bg-white border-2 border-black font-black px-6 py-2 shadow-[2px_2px_0px_rgba(0,0,0,1)] group-hover:bg-neo-yellow transition-colors pointer-events-none text-black">
+                Select files
+              </button>
+            </div>
+
+            <div className="flex justify-between items-center border-t-4 border-black pt-6">
+              <button
+                onClick={() => { setShowUploadModal(false); setIsDragging(false); }}
+                className="bg-white border-2 border-black px-6 py-2 font-black shadow-[2px_2px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all text-black"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -289,23 +332,30 @@ export default function Home() {
         {/* Image upload + preview */}
         <div>
           <label className="block font-bold mb-1 text-sm">Upload screenshot</label>
-          <input
-            id="image-upload"
-            type="file"
-            accept="image/*, .avif, .webp, .heic, .heif"
-            onChange={handleImageChange}
-            className="w-full border-2 border-black p-3 font-mono text-sm hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all bg-white file:mr-4 file:py-2 file:px-4 file:border-2 file:border-black file:font-bold file:bg-neo-yellow file:cursor-pointer cursor-pointer"
-          />
 
-          {/* Thumbnail preview */}
-          {imagePreview && (
-            <div className="mt-3 border-2 border-black shadow-neo inline-block">
+          {!imagePreview ? (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="w-full flex-col flex items-center justify-center gap-2 border-2 border-black border-dashed p-8 text-center hover:bg-gray-50 hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all bg-white cursor-pointer group text-black font-black uppercase tracking-widest"
+            >
+              <span className="text-3xl group-hover:scale-110 transition-transform">🖼️</span>
+              <span className="text-sm mt-2">Click to select or drag & drop a file</span>
+            </button>
+          ) : (
+            <div className="relative border-4 border-black shadow-neo inline-block bg-white p-2 group mt-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imagePreview}
                 alt="Selected screenshot preview"
-                className="max-h-48 max-w-full block"
+                className="max-h-48 max-w-full block border-2 border-black"
               />
+              <button
+                onClick={() => processImageFile(null)}
+                className="absolute -top-3 -right-3 w-8 h-8 flex items-center justify-center bg-neo-red text-white border-2 border-black font-black hover:scale-110 transition-transform shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                title="Remove image"
+              >
+                &times;
+              </button>
             </div>
           )}
         </div>
