@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Google Fonts (loaded via next/font in layout.tsx) ─────────────────── */
+:root {
+  --font-space-grotesk: "Space Grotesk", sans-serif;
+  --font-space-mono:    "Space Mono", monospace;
+}
+
+/* ── ShadCN CSS Variables ──────────────────────────────────────────────── */
+@layer base {
+  :root {
+    /* Neobrutalism — light: stark white/black */
+    --background:          0 0% 100%;
+    --foreground:          0 0% 0%;
+    --card:                0 0% 100%;
+    --card-foreground:     0 0% 0%;
+    --popover:             0 0% 100%;
+    --popover-foreground:  0 0% 0%;
+    --primary:             0 0% 0%;
+    --primary-foreground:  0 0% 100%;
+    --secondary:           0 0% 95%;
+    --secondary-foreground:0 0% 0%;
+    --muted:               0 0% 95%;
+    --muted-foreground:    0 0% 40%;
+    --accent:              55 100% 50%;   /* neo-yellow #FFE500 */
+    --accent-foreground:   0 0% 0%;
+    --destructive:         0 100% 56%;   /* neo-red #FF2424   */
+    --destructive-foreground: 0 0% 100%;
+    --border:              0 0% 0%;
+    --input:               0 0% 0%;
+    --ring:                55 100% 50%;
+    --radius:              0.25rem;      /* sharp corners for neobrutalism */
+
+    /* Chart colours */
+    --chart-1: 55  100% 50%;   /* yellow  */
+    --chart-2: 145 100% 40%;   /* green   */
+    --chart-3: 0   100% 55%;   /* red     */
+    --chart-4: 217 76%  54%;   /* blue    */
+    --chart-5: 300 76%  45%;   /* purple  */
+  }
+}
+
+/* ── Neobrutalism utility classes ──────────────────────────────────────── */
+@layer utilities {
+  /* Hard card with black border + shadow */
+  .neo-card {
+    @apply border-2 border-black shadow-neo bg-white;
+  }
+
+  /* Yellow highlighted card */
+  .neo-card-yellow {
+    @apply border-2 border-black shadow-neo bg-neo-yellow;
+  }
+
+  /* Primary button — black with yellow shadow */
+  .btn-neo {
+    @apply
+      inline-flex items-center justify-center
+      px-6 py-3
+      text-base font-bold
+      bg-black text-white
+      border-2 border-black
+      shadow-neo
+      transition-all duration-100
+      cursor-pointer;
+  }
+
+  .btn-neo:hover {
+    @apply translate-x-[2px] translate-y-[2px] shadow-neo-sm;
+  }
+
+  /* Accent (yellow) button */
+  .btn-neo-yellow {
+    @apply btn-neo bg-neo-yellow text-black shadow-neo;
+  }
+
+  /* Danger button */
+  .btn-neo-red {
+    @apply btn-neo bg-neo-red text-white shadow-neo-red;
+  }
+
+  /* Tag / pill */
+  .neo-tag {
+    @apply
+      inline-block
+      px-3 py-1
+      text-sm font-bold
+      border-2 border-black
+      bg-white;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ── Global base styles ────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    font-family: var(--font-space-grotesk);
+    @apply bg-background text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight;
+  }
+
+  /* Thick scrollbar for neo-brutalist feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #fff;
+    border-left: 2px solid #000;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #000;
+  }
+}

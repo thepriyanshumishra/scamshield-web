@@ -1,0 +1,66 @@
+# ── Node / Next.js ────────────────────────────────────────────────────────
+node_modules
+.DS_Store
+.env
+learning.md
+test_messages.md
+FULL_CODE_WALKTHROUGH.md
+PROJECT_SPEC.md
+anvil.log
+.next/
+out/
+.npm
+
+# ── Python / FastAPI ──────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.db
+*.sqlite3
+
+# ── Environment variables ─────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── OS files ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+
+# ── Build artifacts ───────────────────────────────────────────────────────
+dist/
+build/
+
+# ── ML training data (privacy — never push to GitHub) ─────────────────────
+backend/ml_data/training_data.db
+backend/ml_data/training_data.db-shm
+backend/ml_data/training_data.db-wal
+backend/ml_data/*.jsonl
+backend/ml_data/exports/
+
+# ── Nonsense / Temporary / Junk ──────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.cache/
+.eslintcache
+.stylelintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pip-log.txt
+pip-delete-this-directory.txt
