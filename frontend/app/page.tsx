@@ -226,6 +226,7 @@ export default function Home() {
         backgroundImage: "radial-gradient(#e5e7eb 1.5px, transparent 1.5px)",
         backgroundSize: "30px 30px"
       }}
+      onDragOver={(e) => { e.preventDefault(); setShowUploadModal(true); setIsDragging(true); }}
     >
       {/* ── Upload Modal Overlay ── */}
       {showUploadModal && (
