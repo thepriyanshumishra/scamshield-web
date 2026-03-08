@@ -1,4 +1,14 @@
 import Navbar from "@/components/Navbar";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "About Us — ScamShield",
+    description: "ScamShield is an open-source, AI-powered threat intelligence platform designed to protect users from modern digital scams.",
+    openGraph: {
+        title: "About ScamShield",
+        description: "Learn more about our AI-powered threat intelligence platform.",
+    }
+};
 
 export default function About() {
     return (

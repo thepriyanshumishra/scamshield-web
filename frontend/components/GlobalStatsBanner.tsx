@@ -8,7 +8,9 @@ export default function GlobalStatsBanner() {
     useEffect(() => {
         async function fetchStats() {
             try {
-                const res = await fetch("http://127.0.0.1:8000/scams");
+                // Ensure the base URL does not have a trailing slash
+                const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
+                const res = await fetch(`${baseUrl}/scams`);
                 if (res.ok) {
                     const data = await res.json();
                     setScamCount(data.total);

@@ -1,4 +1,14 @@
 import Navbar from "@/components/Navbar";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Privacy Policy — ScamShield",
+    description: "ScamShield Privacy Policy. We do not store PII. Our blockchain ledger only stores cryptographic hashes.",
+    openGraph: {
+        title: "Privacy Policy | ScamShield",
+        description: "Read how ScamShield protects your data and privacy.",
+    }
+};
 
 export default function PrivacyPolicy() {
     return (

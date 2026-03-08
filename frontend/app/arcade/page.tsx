@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 
 // ── Game Types ────────────────────────────────────────────────────────────
@@ -22,9 +22,11 @@ export default function ArcadePage() {
     const [level, setLevel] = useState<LevelData | null>(null);
 
     // Initial fetch
-    useState(() => {
+
+    useEffect(() => {
         fetchNextLevel();
-    });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     async function fetchNextLevel() {
         setGameState("LOADING");
@@ -169,7 +171,7 @@ export default function ArcadePage() {
                         {/* Reveal */}
                         {gameState === "REVEALED" && (
                             <div className="animate-in slide-in-from-bottom-4 duration-300">
-                                <div className={`p-4 border-2 border-black mb-6 ${userGuessedScam === level.isScam ? "bg-neo-green text-back" : "bg-neo-red text-white"}`}>
+                                <div className={`p-4 border-2 border-black mb-6 ${userGuessedScam === level.isScam ? "bg-neo-green text-black" : "bg-neo-red text-white"}`}>
                                     <h3 className="text-2xl font-black mb-1">
                                         {userGuessedScam === level.isScam ? "🎯 Correct!" : "❌ Incorrect!"}
                                     </h3>

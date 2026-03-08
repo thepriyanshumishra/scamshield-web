@@ -17,19 +17,22 @@ export default function LiveThreatToast() {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
+        let mainTimeout: NodeJS.Timeout;
+        let hideTimeout: NodeJS.Timeout;
+
         // Run a simulation loop
         const scheduleNextToast = () => {
             // Random delay between 8 and 18 seconds
             const delay = Math.floor(Math.random() * 10000) + 8000;
 
-            setTimeout(() => {
+            mainTimeout = setTimeout(() => {
                 // Pick a random message
                 const randomMsg = THREAT_MESSAGES[Math.floor(Math.random() * THREAT_MESSAGES.length)];
                 setToast(randomMsg);
                 setIsVisible(true);
 
                 // Hide it after 4 seconds
-                setTimeout(() => {
+                hideTimeout = setTimeout(() => {
                     setIsVisible(false);
                 }, 4000);
 
@@ -40,6 +43,11 @@ export default function LiveThreatToast() {
 
         // Start initial timeout
         scheduleNextToast();
+
+        return () => {
+            clearTimeout(mainTimeout);
+            clearTimeout(hideTimeout);
+        };
     }, []);
 
     // We keep it mounted but animate it in/out using arbitrary Tailwind transforms

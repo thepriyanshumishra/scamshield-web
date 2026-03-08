@@ -1,4 +1,14 @@
 import Navbar from "@/components/Navbar";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Terms & Conditions — ScamShield",
+    description: "Terms and Conditions for using ScamShield's AI-assisted analytical tools and public APIs.",
+    openGraph: {
+        title: "Terms & Conditions | ScamShield",
+        description: "Please read the terms and conditions for using the ScamShield platform.",
+    }
+};
 
 export default function TermsAndConditions() {
     return (

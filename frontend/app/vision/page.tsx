@@ -1,4 +1,14 @@
 import Navbar from "@/components/Navbar";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+    title: "Our Vision — ScamShield",
+    description: "Our vision is to build an ecosystem where cyber threats are neutralized instantly. Security is a fundamental right.",
+    openGraph: {
+        title: "Our Vision | ScamShield",
+        description: "A Scam-Free Digital Future powered by AI and Web3.",
+    }
+};
 
 export default function Vision() {
     return (
