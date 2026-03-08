@@ -226,7 +226,6 @@ export default function Home() {
         backgroundImage: "radial-gradient(#e5e7eb 1.5px, transparent 1.5px)",
         backgroundSize: "30px 30px"
       }}
-      onDragOver={(e) => { e.preventDefault(); setShowUploadModal(true); setIsDragging(true); }}
     >
       {/* ── Upload Modal Overlay ── */}
       {showUploadModal && (
@@ -336,10 +335,12 @@ export default function Home() {
           {!imagePreview ? (
             <button
               onClick={() => setShowUploadModal(true)}
-              className="w-full flex-col flex items-center justify-center gap-2 border-2 border-black border-dashed p-8 text-center hover:bg-gray-50 hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all bg-white cursor-pointer group text-black font-black uppercase tracking-widest"
+              className="w-full border-2 border-black p-3 font-bold text-sm bg-white hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all text-black text-left flex items-center gap-3 group"
             >
-              <span className="text-3xl group-hover:scale-110 transition-transform">🖼️</span>
-              <span className="text-sm mt-2">Click to select or drag & drop a file</span>
+              <span className="bg-neo-yellow border-2 border-black px-4 py-2 font-black uppercase tracking-widest text-xs group-hover:-translate-y-0.5 group-hover:shadow-[2px_2px_0px_rgba(0,0,0,1)] transition-all">
+                Choose File
+              </span>
+              <span className="font-mono text-gray-500">No file chosen</span>
             </button>
           ) : (
             <div className="relative border-4 border-black shadow-neo inline-block bg-white p-2 group mt-2">
